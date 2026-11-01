@@ -6,10 +6,12 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react"
+import DocumentsPage from "./components/DocumentsPage"
 
 type Period = "FY2024" | "FY2023"
 type Metric = "revenue" | "income" | "cashFlow"
 type Appearance = "dark" | "light" | "system"
+type ActivePage = "overview" | "documents"
 type IconName = "overview" | "document" | "analysis" | "assistant" | "risk" | "settings" | "menu" | "close" | "arrowUp" | "arrowDown" | "minus" | "info" | "sun" | "moon" | "system" | "check"
 
 const financialData = {
@@ -39,9 +41,9 @@ const metricOptions: { key: Metric; label: string }[] = [
   { key: "cashFlow", label: "Cash flow" },
 ]
 
-const navItems: { label: string; icon: IconName; active?: boolean }[] = [
-  { label: "Overview", icon: "overview", active: true },
-  { label: "Documents", icon: "document" },
+const navItems: { label: string; icon: IconName; page?: ActivePage }[] = [
+  { label: "Overview", icon: "overview", page: "overview" },
+  { label: "Documents", icon: "document", page: "documents" },
   { label: "Analysis", icon: "analysis" },
   { label: "Assistant", icon: "assistant" },
   { label: "Risks", icon: "risk" },
@@ -165,28 +167,41 @@ function Brand() {
 }
 
 function DesktopNavigation({
+  activePage,
+  onNavigate,
   onSettings,
 }: {
+  activePage: ActivePage
+  onNavigate: (page: ActivePage) => void
   onSettings: (trigger: HTMLButtonElement) => void
 }) {
   return (
     <nav aria-label="Primary navigation" className="floating-nav glass-strong">
       <Brand />
       <div className="nav-links">
-        {navItems.map((item) => (
-          <Button
-            aria-current={item.active ? "page" : undefined}
-            aria-describedby={
-              !item.active ? "coming-next-description" : undefined
-            }
-            aria-disabled={!item.active}
-            className={`nav-link ${item.active ? "active" : "unavailable"}`}
-            data-tooltip={!item.active ? "Coming next" : undefined}
-            key={item.label}
-          >
-            {item.label}
-          </Button>
-        ))}
+        {navItems.map((item) => {
+          const isActive = item.page !== undefined && item.page === activePage
+          const isEnabled = item.page !== undefined
+          return (
+            <Button
+              aria-current={isActive ? "page" : undefined}
+              aria-describedby={
+                !isEnabled ? "coming-next-description" : undefined
+              }
+              aria-disabled={!isEnabled}
+              className={`nav-link ${isActive ? "active" : ""} ${!isEnabled ? "unavailable" : ""}`}
+              data-tooltip={!isEnabled ? "Coming next" : undefined}
+              key={item.label}
+              onClick={
+                isEnabled && !isActive
+                  ? () => onNavigate(item.page!)
+                  : undefined
+              }
+            >
+              {item.label}
+            </Button>
+          )
+        })}
       </div>
       <Button
         className="settings-button"
@@ -203,12 +218,16 @@ function DesktopNavigation({
 }
 
 function MobileNavigation({
+  activePage,
   menuOpen,
   onMenu,
+  onNavigate,
   onSettings,
 }: {
+  activePage: ActivePage
   menuOpen: boolean
   onMenu: () => void
+  onNavigate: (page: ActivePage) => void
   onSettings: (trigger: HTMLButtonElement) => void
 }) {
   return (
@@ -229,18 +248,30 @@ function MobileNavigation({
           aria-label="Mobile navigation"
           className="mobile-menu glass-strong"
         >
-          {navItems.map((item) => (
-            <Button
-              aria-current={item.active ? "page" : undefined}
-              aria-disabled={!item.active}
-              className={`mobile-link ${item.active ? "active" : ""}`}
-              key={item.label}
-            >
-              <Icon name={item.icon} size={16} />
-              <span>{item.label}</span>
-              {!item.active && <small>Coming next</small>}
-            </Button>
-          ))}
+          {navItems.map((item) => {
+            const isActive = item.page !== undefined && item.page === activePage
+            const isEnabled = item.page !== undefined
+            return (
+              <Button
+                aria-current={isActive ? "page" : undefined}
+                aria-disabled={!isEnabled}
+                className={`mobile-link ${isActive ? "active" : ""}`}
+                key={item.label}
+                onClick={
+                  isEnabled && !isActive
+                    ? () => {
+                        onNavigate(item.page!)
+                        onMenu()
+                      }
+                    : undefined
+                }
+              >
+                <Icon name={item.icon} size={16} />
+                <span>{item.label}</span>
+                {!isEnabled && <small>Coming next</small>}
+              </Button>
+            )
+          })}
           <Button
             className="mobile-link mobile-settings"
             onClick={(event) => onSettings(event.currentTarget)}
@@ -778,6 +809,7 @@ export default function App() {
   const [appearance, setAppearance] = useState<Appearance>(getInitialAppearance)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [activePage, setActivePage] = useState<ActivePage>("overview")
   const settingsTriggerRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -825,88 +857,100 @@ export default function App() {
     <div className="app-shell">
       <div className="ambient ambient-one" />
       <div className="ambient ambient-two" />
-      <DesktopNavigation onSettings={openSettings} />
+      <DesktopNavigation
+        activePage={activePage}
+        onNavigate={setActivePage}
+        onSettings={openSettings}
+      />
       <MobileNavigation
+        activePage={activePage}
         menuOpen={menuOpen}
         onMenu={() => setMenuOpen((value) => !value)}
+        onNavigate={setActivePage}
         onSettings={openSettings}
       />
 
       <main className="content">
-        <header className="page-header entrance entrance-1">
-          <div className="company-context">
-            <h1>Northstar Manufacturing</h1>
-            <p>
-              Financial overview <span aria-hidden="true">·</span> USD millions
-            </p>
-          </div>
-          <div className="header-controls">
-            <SlidingSelector
-              ariaLabel="Reporting period"
-              className="period-selector"
-              onChange={setPeriod}
-              options={[
-                { key: "FY2024", label: "FY2024" },
-                { key: "FY2023", label: "FY2023" },
-              ]}
-              value={period}
-            />
-            <span className="sample-badge">Sample data</span>
-          </div>
-          <p className="sample-note">
-            Fictional company and figures. No document has been analyzed.
-          </p>
-        </header>
+        {activePage === "documents" ? (
+          <DocumentsPage onBack={() => setActivePage("overview")} />
+        ) : (
+          <>
+            <header className="page-header entrance entrance-1">
+              <div className="company-context">
+                <h1>Northstar Manufacturing</h1>
+                <p>
+                  Financial overview <span aria-hidden="true">·</span> USD millions
+                </p>
+              </div>
+              <div className="header-controls">
+                <SlidingSelector
+                  ariaLabel="Reporting period"
+                  className="period-selector"
+                  onChange={setPeriod}
+                  options={[
+                    { key: "FY2024", label: "FY2024" },
+                    { key: "FY2023", label: "FY2023" },
+                  ]}
+                  value={period}
+                />
+                <span className="sample-badge">Sample data</span>
+              </div>
+              <p className="sample-note">
+                Fictional company and figures. No document has been analyzed.
+              </p>
+            </header>
 
-        <Surface className="metric-strip entrance entrance-2">
-          <MetricCell
-            animateValue
-            change={
-              hasComparison
-                ? comparison(current.revenue, previous.revenue)
-                : undefined
-            }
-            label="Revenue"
-            value={current.revenue}
-          />
-          <MetricCell
-            change={
-              hasComparison
-                ? comparison(current.income, previous.income)
-                : undefined
-            }
-            label="Net income"
-            value={current.income}
-          />
-          <MetricCell
-            change={
-              hasComparison
-                ? comparison(current.assets, previous.assets)
-                : undefined
-            }
-            label="Total assets"
-            neutral
-            value={current.assets}
-          />
-          <MetricCell
-            change={
-              hasComparison
-                ? comparison(current.cashFlow, previous.cashFlow)
-                : undefined
-            }
-            label="Operating cash flow"
-            value={current.cashFlow}
-          />
-        </Surface>
+            <Surface className="metric-strip entrance entrance-2">
+              <MetricCell
+                animateValue
+                change={
+                  hasComparison
+                    ? comparison(current.revenue, previous.revenue)
+                    : undefined
+                }
+                label="Revenue"
+                value={current.revenue}
+              />
+              <MetricCell
+                change={
+                  hasComparison
+                    ? comparison(current.income, previous.income)
+                    : undefined
+                }
+                label="Net income"
+                value={current.income}
+              />
+              <MetricCell
+                change={
+                  hasComparison
+                    ? comparison(current.assets, previous.assets)
+                    : undefined
+                }
+                label="Total assets"
+                neutral
+                value={current.assets}
+              />
+              <MetricCell
+                change={
+                  hasComparison
+                    ? comparison(current.cashFlow, previous.cashFlow)
+                    : undefined
+                }
+                label="Operating cash flow"
+                value={current.cashFlow}
+              />
+            </Surface>
 
-        <div className="main-grid entrance entrance-3">
-          <PerformanceChart metric={metric} onMetric={setMetric} />
-          <WhatChanged period={period} />
-        </div>
+            <div className="main-grid entrance entrance-3">
+              <PerformanceChart metric={metric} onMetric={setMetric} />
+              <WhatChanged period={period} />
+            </div>
 
-        <div className="entrance entrance-4">
-          <Documents />
-        </div>
+            <div className="entrance entrance-4">
+              <Documents />
+            </div>
+          </>
+        )}
       </main>
 
       {settingsOpen && (

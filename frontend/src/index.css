@@ -1334,3 +1334,323 @@
     transform: none !important;
   }
 }
+
+/* ─── Documents page ──────────────────────────────────────────────────────── */
+
+.docs-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 24px;
+}
+
+.docs-page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.docs-back-button {
+  flex: none;
+  min-height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 8%), transparent 55%),
+    var(--control);
+  box-shadow: var(--inset);
+  padding: 0 12px;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.docs-back-button:hover {
+  border-color: var(--border-top);
+  background-color: var(--control-hover);
+  color: var(--text);
+}
+
+.docs-page-title h1 {
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -.025em;
+  line-height: 1.2;
+}
+
+.docs-page-title p {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* Drop zone */
+
+.docs-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 20px 20px;
+  gap: 0;
+  text-align: center;
+  border: 2px dashed var(--border);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.docs-dropzone-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.docs-drop-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.docs-drop-icon {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel-deep);
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.docs-drop-label {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.docs-choose-button {
+  min-height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 10%), transparent 55%),
+    var(--control);
+  box-shadow: var(--inset);
+  padding: 0 16px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.docs-choose-button:hover {
+  border-color: var(--border-top);
+  background-color: var(--control-hover);
+}
+
+.docs-drop-hint {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+  max-width: 340px;
+}
+
+.docs-error {
+  margin-top: 12px;
+  padding: 9px 13px;
+  border: 1px solid rgb(226 139 130 / 30%);
+  border-radius: 10px;
+  background: rgb(226 139 130 / 10%);
+  color: var(--negative);
+  font-size: 12px;
+  font-weight: 500;
+  max-width: 420px;
+  text-align: left;
+}
+
+/* File card */
+
+.docs-file-card {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 12px;
+}
+
+.docs-file-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.docs-file-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-deep);
+  color: var(--accent);
+}
+
+.docs-file-meta {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.docs-file-name {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docs-file-size {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.docs-remove-button {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--control);
+  box-shadow: var(--inset);
+  color: var(--text-secondary);
+}
+
+.docs-remove-button:hover {
+  border-color: var(--border-top);
+  background: var(--control-hover);
+  color: var(--negative);
+}
+
+.docs-memory-note {
+  color: var(--text-muted);
+  font-size: 11px;
+  padding-left: 52px;
+  margin-top: -4px;
+}
+
+.docs-simulate-button {
+  align-self: flex-start;
+  min-height: 36px;
+  border: 1px solid rgb(167 201 255 / 30%);
+  border-radius: 12px;
+  background:
+    linear-gradient(130deg, rgb(255 255 255 / 10%), transparent 55%),
+    var(--accent-soft);
+  box-shadow: var(--inset);
+  padding: 0 18px;
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 650;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    transform 140ms ease;
+}
+
+.docs-simulate-button:hover {
+  border-color: rgb(167 201 255 / 55%);
+  background-color: rgb(167 201 255 / 22%);
+}
+
+/* Progress */
+
+.docs-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.docs-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.docs-progress-label {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.docs-progress-pct {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.docs-progress-bar-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--panel-deep);
+  overflow: hidden;
+  border: 1px solid var(--divider);
+}
+
+.docs-progress-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7099cc, var(--accent));
+  transition: width 320ms var(--ease);
+}
+
+.docs-done-note {
+  padding: 9px 13px;
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  background: var(--panel-deep);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.docs-reset-button {
+  align-self: flex-start;
+  min-height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--control);
+  box-shadow: var(--inset);
+  padding: 0 14px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.docs-reset-button:hover {
+  border-color: var(--border-top);
+  background: var(--control-hover);
+  color: var(--text);
+}
+
+@media (max-width: 600px) {
+  .docs-page-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .docs-memory-note {
+    padding-left: 0;
+  }
+
+  .docs-simulate-button,
+  .docs-reset-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
