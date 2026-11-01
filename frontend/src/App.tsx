@@ -6,13 +6,33 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react"
-import DocumentsPage from "./components/DocumentsPage"
+import DocumentsPage, {
+  type LocalDocument,
+} from "./components/DocumentsPage"
 
 type Period = "FY2024" | "FY2023"
 type Metric = "revenue" | "income" | "cashFlow"
 type Appearance = "dark" | "light" | "system"
+type NavLayout = "sidebar" | "topbar"
 type ActivePage = "overview" | "documents"
-type IconName = "overview" | "document" | "analysis" | "assistant" | "risk" | "settings" | "menu" | "close" | "arrowUp" | "arrowDown" | "minus" | "info" | "sun" | "moon" | "system" | "check"
+type IconName =
+  | "overview"
+  | "document"
+  | "analysis"
+  | "assistant"
+  | "risk"
+  | "settings"
+  | "menu"
+  | "close"
+  | "arrowUp"
+  | "arrowDown"
+  | "minus"
+  | "info"
+  | "sun"
+  | "moon"
+  | "system"
+  | "check"
+  | "externalLink"
 
 const financialData = {
   FY2023: {
@@ -111,6 +131,12 @@ function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
       </>
     ),
     check: <path d="m5 12 4 4L19 6" />,
+    externalLink: (
+      <>
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+        <path d="M15 3h6v6M10 14 21 3" />
+      </>
+    ),
   }
 
   return (
@@ -127,46 +153,33 @@ function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
   )
 }
 
-const Button =
-  forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
-    function Button({ children, className = "", ...props }, ref) {
-      return (
-        <button
-          className={`button ${className}`}
-          ref={ref}
-          type="button"
-          {...props}
-        >
-          {children}
-        </button>
-      )
-    },
-  )
-
-function Surface({
-  children,
-  className = "",
-}: {
-  children: ReactNode
-  className?: string
-}) {
-  return <section className={`surface ${className}`}>{children}</section>
-}
-
-function Brand() {
+const Button = forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement>
+>(function Button({ children, className = "", ...props }, ref) {
   return (
-    <div className="brand">
+    <button className={`button ${className}`} ref={ref} type="button" {...props}>
+      {children}
+    </button>
+  )
+})
+
+function Brand({ mini = false }: { mini?: boolean }) {
+  return (
+    <div className={`brand ${mini ? "brand-mini" : ""}`} title="FinSight AI">
       <div className="brand-mark" aria-hidden="true">
         <span />
         <span />
         <span />
       </div>
-      <span>FinSight AI</span>
+      {!mini && <span>FinSight AI</span>}
     </div>
   )
 }
 
-function DesktopNavigation({
+/* ─── Desktop Layout 1: Sidebar ─────────────────────────────────────────────── */
+
+function Sidebar({
   activePage,
   onNavigate,
   onSettings,
@@ -176,114 +189,247 @@ function DesktopNavigation({
   onSettings: (trigger: HTMLButtonElement) => void
 }) {
   return (
-    <nav aria-label="Primary navigation" className="floating-nav glass-strong">
-      <Brand />
-      <div className="nav-links">
+    <nav aria-label="Sidebar navigation" className="sidebar">
+      <div className="sidebar-brand-wrap">
+        <Brand mini />
+      </div>
+      <div className="sidebar-links">
         {navItems.map((item) => {
           const isActive = item.page !== undefined && item.page === activePage
           const isEnabled = item.page !== undefined
           return (
             <Button
-              aria-current={isActive ? "page" : undefined}
-              aria-describedby={
-                !isEnabled ? "coming-next-description" : undefined
-              }
-              aria-disabled={!isEnabled}
-              className={`nav-link ${isActive ? "active" : ""} ${!isEnabled ? "unavailable" : ""}`}
-              data-tooltip={!isEnabled ? "Coming next" : undefined}
               key={item.label}
+              aria-current={isActive ? "page" : undefined}
+              aria-disabled={!isEnabled}
+              aria-label={item.label}
+              className={`sidebar-button ${isActive ? "active" : ""} ${!isEnabled ? "unavailable" : ""}`}
+              data-tooltip={item.label}
               onClick={
-                isEnabled && !isActive
-                  ? () => onNavigate(item.page!)
-                  : undefined
+                isEnabled && !isActive ? () => onNavigate(item.page!) : undefined
+              }
+            >
+              <Icon name={item.icon} size={18} />
+            </Button>
+          )
+        })}
+      </div>
+      <div className="sidebar-bottom">
+        <Button
+          aria-label="Settings"
+          className="sidebar-button sidebar-settings"
+          data-tooltip="Settings"
+          onClick={(event) => onSettings(event.currentTarget)}
+        >
+          <Icon name="settings" size={18} />
+        </Button>
+      </div>
+    </nav>
+  )
+}
+
+/* ─── Desktop Layout 2: Top Bar ─────────────────────────────────────────────── */
+
+function TopBarNav({
+  activePage,
+  onNavigate,
+  onSettings,
+}: {
+  activePage: ActivePage
+  onNavigate: (page: ActivePage) => void
+  onSettings: (trigger: HTMLButtonElement) => void
+}) {
+  return (
+    <header className="topbar-nav" role="banner">
+      <Brand />
+      <nav aria-label="Primary navigation" className="top-nav">
+        <span className="sr-only" id="coming-next-top">
+          Coming next. This destination is not available in the prototype.
+        </span>
+        {navItems.map((item) => {
+          const isActive = item.page !== undefined && item.page === activePage
+          const isEnabled = item.page !== undefined
+          return (
+            <Button
+              key={item.label}
+              aria-current={isActive ? "page" : undefined}
+              aria-describedby={!isEnabled ? "coming-next-top" : undefined}
+              aria-disabled={!isEnabled}
+              className={`top-nav-link ${isActive ? "active" : ""} ${!isEnabled ? "unavailable" : ""}`}
+              data-tooltip={!isEnabled ? "Coming next" : undefined}
+              onClick={
+                isEnabled && !isActive ? () => onNavigate(item.page!) : undefined
               }
             >
               {item.label}
             </Button>
           )
         })}
+      </nav>
+      <div className="topbar-right">
+        <Button
+          className="settings-button"
+          onClick={(event) => onSettings(event.currentTarget)}
+        >
+          <Icon name="settings" size={14} />
+          <span>Settings</span>
+        </Button>
       </div>
-      <Button
-        className="settings-button"
-        onClick={(event) => onSettings(event.currentTarget)}
-      >
-        <Icon name="settings" size={15} />
-        Settings
-      </Button>
-      <span className="sr-only" id="coming-next-description">
-        Coming next. This destination is not available in the prototype.
-      </span>
-    </nav>
+    </header>
   )
 }
 
-function MobileNavigation({
-  activePage,
-  menuOpen,
+/* ─── Mobile Chrome & Drawer ─────────────────────────────────────────────────── */
+
+function MobileTopBar({
   onMenu,
+  onSettings,
+}: {
+  onMenu: () => void
+  onSettings: (trigger: HTMLButtonElement) => void
+}) {
+  return (
+    <header className="mobile-top-bar" role="banner">
+      <Brand />
+      <div className="mobile-top-actions">
+        <Button
+          aria-label="Settings"
+          className="mobile-top-btn"
+          onClick={(event) => onSettings(event.currentTarget)}
+        >
+          <Icon name="settings" size={16} />
+        </Button>
+        <Button
+          aria-label="Open navigation menu"
+          className="mobile-menu-btn"
+          onClick={onMenu}
+        >
+          <Icon name="menu" size={16} />
+          <span>Menu</span>
+        </Button>
+      </div>
+    </header>
+  )
+}
+
+function MobileDrawer({
+  activePage,
+  isOpen,
+  onClose,
   onNavigate,
   onSettings,
 }: {
   activePage: ActivePage
-  menuOpen: boolean
-  onMenu: () => void
+  isOpen: boolean
+  onClose: () => void
   onNavigate: (page: ActivePage) => void
   onSettings: (trigger: HTMLButtonElement) => void
 }) {
+  const drawerRef = useRef<HTMLElement>(null)
+  const prevFocusedRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (isOpen) {
+      prevFocusedRef.current = document.activeElement as HTMLElement
+      const focusable = drawerRef.current?.querySelectorAll<HTMLElement>(
+        "button:not([disabled])"
+      )
+      focusable?.[0]?.focus()
+
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === "Escape") {
+          event.preventDefault()
+          onClose()
+          return
+        }
+        if (event.key === "Tab" && focusable && focusable.length > 0) {
+          const first = focusable[0]
+          const last = focusable[focusable.length - 1]
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault()
+            last.focus()
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault()
+            first.focus()
+          }
+        }
+      }
+      document.addEventListener("keydown", handleKeyDown)
+      document.body.classList.add("drawer-open")
+      return () => {
+        document.removeEventListener("keydown", handleKeyDown)
+        document.body.classList.remove("drawer-open")
+        prevFocusedRef.current?.focus()
+      }
+    }
+  }, [isOpen, onClose])
+
+  if (!isOpen) return null
+
   return (
-    <div className="mobile-nav-wrap">
-      <div className="mobile-nav glass-strong">
-        <Brand />
-        <Button
-          aria-expanded={menuOpen}
-          className="menu-button"
-          onClick={onMenu}
-        >
-          <Icon name={menuOpen ? "close" : "menu"} size={17} />
-          Menu
-        </Button>
-      </div>
-      {menuOpen && (
-        <nav
-          aria-label="Mobile navigation"
-          className="mobile-menu glass-strong"
-        >
+    <div className="mobile-drawer-layer">
+      <div className="mobile-drawer-backdrop" onClick={onClose} aria-hidden="true" />
+      <aside
+        aria-label="Mobile navigation drawer"
+        aria-modal="true"
+        className="mobile-drawer surface"
+        ref={drawerRef}
+        role="dialog"
+      >
+        <div className="mobile-drawer-header">
+          <Brand />
+          <Button
+            aria-label="Close menu"
+            className="close-button"
+            onClick={onClose}
+          >
+            <Icon name="close" size={16} />
+          </Button>
+        </div>
+        <nav aria-label="Mobile destinations" className="mobile-drawer-nav">
           {navItems.map((item) => {
             const isActive = item.page !== undefined && item.page === activePage
             const isEnabled = item.page !== undefined
             return (
               <Button
+                key={item.label}
                 aria-current={isActive ? "page" : undefined}
                 aria-disabled={!isEnabled}
-                className={`mobile-link ${isActive ? "active" : ""}`}
-                key={item.label}
+                className={`mobile-drawer-link ${isActive ? "active" : ""}`}
                 onClick={
-                  isEnabled && !isActive
+                  isEnabled
                     ? () => {
-                        onNavigate(item.page!)
-                        onMenu()
+                        if (!isActive) onNavigate(item.page!)
+                        onClose()
                       }
                     : undefined
                 }
               >
-                <Icon name={item.icon} size={16} />
+                <Icon name={item.icon} size={18} />
                 <span>{item.label}</span>
-                {!isEnabled && <small>Coming next</small>}
+                {!isEnabled && <small className="coming-next-badge">Coming next</small>}
               </Button>
             )
           })}
+        </nav>
+        <div className="mobile-drawer-footer">
           <Button
-            className="mobile-link mobile-settings"
-            onClick={(event) => onSettings(event.currentTarget)}
+            className="mobile-drawer-link mobile-drawer-settings"
+            onClick={(event) => {
+              onSettings(event.currentTarget)
+              onClose()
+            }}
           >
-            <Icon name="settings" size={16} />
+            <Icon name="settings" size={18} />
             <span>Settings</span>
           </Button>
-        </nav>
-      )}
+        </div>
+      </aside>
     </div>
   )
 }
+
+/* ─── UI Widgets ────────────────────────────────────────────────────────────── */
 
 function SlidingSelector<T extends string>({
   ariaLabel,
@@ -332,7 +478,7 @@ function Comparison({
     return (
       <div className="comparison muted">
         <Icon name="minus" size={13} />
-        Prior year unavailable
+        <span>Prior year unavailable</span>
       </div>
     )
   }
@@ -357,7 +503,7 @@ function AnimatedNumber({ value }: { value: number }) {
 
   useEffect(() => {
     const reducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
+      "(prefers-reduced-motion: reduce)"
     ).matches
     if (reducedMotion) {
       setDisplayValue(value)
@@ -401,57 +547,74 @@ function AnimatedNumber({ value }: { value: number }) {
   )
 }
 
-function MetricCell({
-  animateValue = false,
-  change,
-  label,
-  neutral,
-  value,
+/* ─── Financial Snapshot (Left Column) ──────────────────────────────────────── */
+
+function FinancialSnapshot({
+  period,
+  current,
+  hasComparison,
+  comparison,
 }: {
-  animateValue?: boolean
-  change?: number
-  label: string
-  neutral?: boolean
-  value: number
+  period: Period
+  current: typeof financialData.FY2024
+  hasComparison: boolean
+  comparison: (value: number, prior: number) => number
 }) {
+  const previous = financialData.FY2023
+
+  const tiles = [
+    {
+      label: "Revenue",
+      value: current.revenue,
+      change: hasComparison ? comparison(current.revenue, previous.revenue) : undefined,
+      neutral: false,
+      color: "tile-lavender",
+    },
+    {
+      label: "Net income",
+      value: current.income,
+      change: hasComparison ? comparison(current.income, previous.income) : undefined,
+      neutral: false,
+      color: "tile-blue",
+    },
+    {
+      label: "Total assets",
+      value: current.assets,
+      change: hasComparison ? comparison(current.assets, previous.assets) : undefined,
+      neutral: true,
+      color: "tile-peach",
+    },
+    {
+      label: "Operating cash flow",
+      value: current.cashFlow,
+      change: hasComparison ? comparison(current.cashFlow, previous.cashFlow) : undefined,
+      neutral: false,
+      color: "tile-neutral",
+    },
+  ]
+
   return (
-    <div className="metric-cell">
-      <div className="metric-label">{label}</div>
-      <div
-        className={`metric-value ${animateValue ? "revenue-value" : ""}`}
-        key={animateValue ? value : undefined}
-      >
-        <span>$</span>
-        <AnimatedNumber value={value} />
-        <small>M</small>
+    <div className="snapshot-panel surface">
+      <div className="snapshot-heading">
+        <h2>Financial snapshot</h2>
+        <p>{period}</p>
       </div>
-      <Comparison change={change} neutral={neutral} />
+      {tiles.map((tile, i) => (
+        <div className={`metric-tile ${tile.color} entrance entrance-${i + 1}`} key={tile.label}>
+          <div className="tile-label">{tile.label}</div>
+          <div className="tile-value">
+            <span className="tile-currency">$</span>
+            <AnimatedNumber value={tile.value} />
+            <span className="tile-unit">M</span>
+          </div>
+          <Comparison change={tile.change} neutral={tile.neutral} />
+        </div>
+      ))}
     </div>
   )
 }
 
-function InfoTip({ label, children }: { label: string; children: ReactNode }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <span className="info-tip">
-      <Button
-        aria-expanded={open}
-        aria-label={`About ${label}`}
-        className="info-button"
-        onBlur={() => setOpen(false)}
-        onClick={() => setOpen((value) => !value)}
-        onFocus={() => setOpen(true)}
-      >
-        <Icon name="info" size={13} />
-      </Button>
-      {open && (
-        <span className="info-popover" role="tooltip">
-          {children}
-        </span>
-      )}
-    </span>
-  )
-}
+/* ─── Performance Chart (Newest Year FY2024 on LEFT) ────────────────────────── */
 
 type ChartTooltip = {
   left: number
@@ -468,9 +631,11 @@ function PerformanceChart({
   onMetric: (metric: Metric) => void
 }) {
   const [tooltip, setTooltip] = useState<ChartTooltip>(null)
+
+  // Explicit ordering: FY2024 on the LEFT, FY2023 on the RIGHT
   const values = [
-    { year: "FY2023", value: financialData.FY2023[metric] },
-    { year: "FY2024", value: financialData.FY2024[metric] },
+    { year: "FY2024" as const, value: financialData.FY2024[metric], isCurrent: true },
+    { year: "FY2023" as const, value: financialData.FY2023[metric], isCurrent: false },
   ]
   const selectedLabel =
     metricOptions.find((item) => item.key === metric)?.label ?? ""
@@ -481,7 +646,7 @@ function PerformanceChart({
   const xPositions = [190, 390]
   const ticks = [0, chartMax / 2, chartMax]
 
-  const showTooltip = (item: typeof values[number], x: number, y: number) => {
+  const showTooltip = (item: (typeof values)[number], x: number, y: number) => {
     setTooltip({
       left: (x / 560) * 100,
       top: (y / 190) * 100,
@@ -491,10 +656,10 @@ function PerformanceChart({
   }
 
   return (
-    <Surface className="performance-panel">
-      <div className="panel-toolbar">
+    <div className="perf-panel surface">
+      <div className="panel-header">
         <div>
-          <h2>Performance</h2>
+          <h2>Financial performance</h2>
           <p>USD millions · zero baseline</p>
         </div>
         <SlidingSelector
@@ -507,7 +672,7 @@ function PerformanceChart({
       </div>
       <div className="performance-chart">
         <svg
-          aria-label={`${selectedLabel}: FY2023 ${values[0].value} million dollars and FY2024 ${values[1].value} million dollars`}
+          aria-label={`${selectedLabel}: FY2024 ${values[0].value} million dollars and FY2023 ${values[1].value} million dollars`}
           className="chart-svg"
           role="img"
           viewBox="0 0 560 190"
@@ -527,14 +692,15 @@ function PerformanceChart({
             const height = (item.value / chartMax) * chartHeight
             const x = xPositions[index]
             const y = baseline - height
+            const barClass = item.isCurrent ? "bar-current" : "bar-prior"
             return (
               <g
-                className={`chart-series series-${index + 1}`}
+                className={`chart-series series-${item.isCurrent ? "current" : "prior"}`}
                 key={`${metric}-${item.year}`}
               >
                 <rect
                   aria-label={`${item.year} ${selectedLabel}: ${item.value} million dollars`}
-                  className={`performance-bar bar-${index + 1}`}
+                  className={`performance-bar ${barClass}`}
                   height={height}
                   onBlur={() => setTooltip(null)}
                   onFocus={() => showTooltip(item, x, y)}
@@ -553,7 +719,7 @@ function PerformanceChart({
                   })}
                   M
                 </text>
-                <text className="year-text" textAnchor="middle" x={x} y="180">
+                <text className="year-text" textAnchor="middle" x={x} y={180}>
                   {item.year}
                 </text>
               </g>
@@ -571,110 +737,103 @@ function PerformanceChart({
           </div>
         )}
       </div>
-    </Surface>
+    </div>
   )
 }
 
-function WhatChanged({ period }: { period: Period }) {
+/* ─── Financial Indicators (Lower Left) ──────────────────────────────────────── */
+
+function FinancialIndicators({ period }: { period: Period }) {
   const current = financialData[period]
   const currentRatio = current.currentAssets / current.currentLiabilities
   const isCurrent = period === "FY2024"
 
   return (
-    <Surface className="insights-panel">
-      <div className="insights-heading">
-        <h2>What changed</h2>
-        <span>{period}</span>
-      </div>
-      <div className="insight-lines">
-        {isCurrent ? (
-          <>
-            <p>
-              <strong className="positive">+7.5%</strong> Revenue increased.
-            </p>
-            <p>
-              <strong className="negative">−1.5 pp</strong> Net profit margin
-              fell.
-            </p>
-            <p>
-              <strong className="negative">−10.8%</strong> Operating cash flow
-              decreased.
-            </p>
-          </>
-        ) : (
-          <p className="prior-note">
-            <Icon name="minus" size={14} />
-            Prior-year comparisons are unavailable for FY2023.
-          </p>
+    <div className="indicators-panel surface">
+      <h2>Financial indicators</h2>
+      <div className="indicator-row">
+        <span className="indicator-label">Net profit margin</span>
+        <span className={`indicator-value ${isCurrent ? "negative" : ""}`}>
+          {current.margin.toFixed(1)}%
+        </span>
+        {isCurrent && (
+          <span className="indicator-note">vs 10.0% prior year</span>
         )}
       </div>
-      <div className="ratio-row">
-        <div>
-          <span>
-            Current ratio
-            <InfoTip label="current ratio">
-              Current assets divided by current liabilities.
-            </InfoTip>
-          </span>
-          <strong>{currentRatio.toFixed(2)}×</strong>
-        </div>
-        <div>
-          <span>Leverage</span>
-          <strong className="unavailable">Unavailable</strong>
-          <small>Debt data not supplied</small>
-        </div>
+      <div className="indicator-row">
+        <span className="indicator-label">Current ratio</span>
+        <span className="indicator-value">{currentRatio.toFixed(2)}×</span>
       </div>
-      <div className="margin-compact">
-        <div className="margin-copy">
-          <span>Net profit margin</span>
-          <small>10.0% → 8.5%</small>
-        </div>
-        <div className="margin-bars" aria-label="Net profit margin comparison">
-          <span>
-            <i className="margin-prior" />
-            FY23
-          </span>
-          <span>
-            <i className="margin-current" />
-            FY24
-          </span>
-        </div>
+      <div className="indicator-row">
+        <span className="indicator-label">Revenue growth</span>
+        {isCurrent ? (
+          <span className="indicator-value positive">+7.5%</span>
+        ) : (
+          <span className="indicator-value muted">—</span>
+        )}
+        {!isCurrent && (
+          <span className="indicator-note">Prior year unavailable</span>
+        )}
       </div>
-    </Surface>
+      <div className="indicator-row">
+        <span className="indicator-label">Leverage</span>
+        <span className="indicator-value muted">Unavailable</span>
+        <span className="indicator-note">Debt data not supplied</span>
+      </div>
+    </div>
   )
 }
 
-function Documents() {
+/* ─── Sample Documents (Lower Right) ────────────────────────────────────────── */
+
+function SampleDocuments({
+  onNavigate,
+}: {
+  onNavigate: (page: ActivePage) => void
+}) {
   const rows = [
-    ["Northstar_Annual_Report_FY2024.pdf", "FY2024"],
-    ["Northstar_Annual_Report_FY2023.pdf", "FY2023"],
+    { name: "Northstar_Annual_Report_FY2024.pdf", year: "FY2024" },
+    { name: "Northstar_Annual_Report_FY2023.pdf", year: "FY2023" },
   ]
+
   return (
-    <Surface className="documents-panel">
-      <div className="documents-header">
-        <h2>Sample documents</h2>
+    <div className="docs-sample-panel surface">
+      <h2>Sample documents</h2>
+      {rows.map((row) => (
+        <div className="sample-doc-row" key={row.name}>
+          <span className="sample-doc-name">{row.name}</span>
+          <span className="sample-doc-year">{row.year}</span>
+          <span className="sample-doc-status">Sample record</span>
+        </div>
+      ))}
+      <div className="sample-docs-footer">
         <p>Illustrative records only; no PDF files are attached.</p>
+        <button
+          className="open-docs-link"
+          onClick={() => onNavigate("documents")}
+          type="button"
+        >
+          <Icon name="externalLink" size={13} />
+          <span>Open Documents</span>
+        </button>
       </div>
-      <div className="documents-list">
-        {rows.map(([document, year]) => (
-          <div className="document-row" key={document}>
-            <span className="document-name">{document}</span>
-            <span className="document-year">{year}</span>
-            <span className="status">Sample record</span>
-          </div>
-        ))}
-      </div>
-    </Surface>
+    </div>
   )
 }
+
+/* ─── Settings Panel with Appearance and Layout Preferences ─────────────────── */
 
 function SettingsPanel({
   appearance,
+  navLayout,
   onAppearance,
+  onNavLayout,
   onClose,
 }: {
   appearance: Appearance
+  navLayout: NavLayout
   onAppearance: (appearance: Appearance) => void
+  onNavLayout: (layout: NavLayout) => void
   onClose: () => void
 }) {
   const panelRef = useRef<HTMLElement>(null)
@@ -683,7 +842,7 @@ function SettingsPanel({
     const panel = panelRef.current
     if (!panel) return
     const focusable = panel.querySelectorAll<HTMLElement>(
-      "button:not([disabled])",
+      "button:not([disabled])"
     )
     focusable[0]?.focus()
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -707,14 +866,14 @@ function SettingsPanel({
     return () => panel.removeEventListener("keydown", handleKeyDown)
   }, [onClose])
 
-  const options: {
+  const appearanceOptions: {
     key: Appearance
     label: string
     icon: IconName
     detail: string
   }[] = [
+    { key: "light", label: "Light", icon: "sun", detail: "Lavender workspace" },
     { key: "dark", label: "Dark", icon: "moon", detail: "Graphite workspace" },
-    { key: "light", label: "Light", icon: "sun", detail: "Silver and white" },
     {
       key: "system",
       label: "System",
@@ -723,13 +882,33 @@ function SettingsPanel({
     },
   ]
 
+  const layoutOptions: {
+    key: NavLayout
+    label: string
+    icon: IconName
+    detail: string
+  }[] = [
+    {
+      key: "sidebar",
+      label: "Sidebar",
+      icon: "overview",
+      detail: "Compact vertical icon rail (default)",
+    },
+    {
+      key: "topbar",
+      label: "Top bar",
+      icon: "menu",
+      detail: "Horizontal labeled navigation",
+    },
+  ]
+
   return (
     <div className="settings-layer">
-      <div className="settings-backdrop" onClick={onClose} />
+      <div className="settings-backdrop" onClick={onClose} aria-hidden="true" />
       <aside
         aria-labelledby="settings-title"
         aria-modal="true"
-        className="settings-panel glass-strong"
+        className="settings-panel surface"
         ref={panelRef}
         role="dialog"
       >
@@ -746,6 +925,8 @@ function SettingsPanel({
             <Icon name="close" />
           </Button>
         </div>
+
+        {/* Appearance Preference */}
         <div className="settings-section">
           <h3>Appearance</h3>
           <p>Choose the interface appearance for this browser.</p>
@@ -754,7 +935,7 @@ function SettingsPanel({
             className="appearance-options"
             role="radiogroup"
           >
-            {options.map((option) => (
+            {appearanceOptions.map((option) => (
               <Button
                 aria-checked={appearance === option.key}
                 className={`appearance-option ${
@@ -778,40 +959,97 @@ function SettingsPanel({
             ))}
           </div>
         </div>
+
+        {/* Layout Preference */}
+        <div className="settings-section">
+          <h3>Layout</h3>
+          <p>Choose desktop navigation position.</p>
+          <div
+            aria-label="Navigation position"
+            className="appearance-options"
+            role="radiogroup"
+          >
+            {layoutOptions.map((option) => (
+              <Button
+                aria-checked={navLayout === option.key}
+                className={`appearance-option ${
+                  navLayout === option.key ? "selected" : ""
+                }`}
+                key={option.key}
+                onClick={() => onNavLayout(option.key)}
+                role="radio"
+              >
+                <span className="appearance-icon">
+                  <Icon name={option.icon} />
+                </span>
+                <span className="appearance-copy">
+                  <strong>{option.label}</strong>
+                  <small>{option.detail}</small>
+                </span>
+                <span className="radio-mark">
+                  {navLayout === option.key && <Icon name="check" size={13} />}
+                </span>
+              </Button>
+            ))}
+          </div>
+        </div>
+
         <p className="settings-footnote">Saved locally on this device.</p>
       </aside>
     </div>
   )
 }
 
+/* ─── State Persistence Keys ────────────────────────────────────────────────── */
+
 const APPEARANCE_KEY = "finsight-appearance"
-const REDESIGN_KEY = "finsight-smoked-glass-v1"
+const REDESIGN_KEY = "finsight-lavender-v2"
+const NAV_LAYOUT_KEY = "finsight-nav-layout"
 
 function getInitialAppearance(): Appearance {
   try {
     if (!window.localStorage.getItem(REDESIGN_KEY)) {
       window.localStorage.setItem(REDESIGN_KEY, "applied")
-      window.localStorage.setItem(APPEARANCE_KEY, "dark")
-      return "dark"
+      window.localStorage.setItem(APPEARANCE_KEY, "light")
+      return "light"
     }
     const stored = window.localStorage.getItem(APPEARANCE_KEY)
     if (stored === "dark" || stored === "light" || stored === "system")
       return stored
   } catch {
-    // Storage can be unavailable in privacy-restricted environments.
+    // Privacy-restricted environments
   }
-  return "dark"
+  return "light"
 }
+
+function getInitialNavLayout(): NavLayout {
+  try {
+    const stored = window.localStorage.getItem(NAV_LAYOUT_KEY)
+    if (stored === "sidebar" || stored === "topbar") return stored
+  } catch {
+    // Privacy-restricted environments
+  }
+  return "sidebar"
+}
+
+/* ─── Main App Component ─────────────────────────────────────────────────────── */
 
 export default function App() {
   const [period, setPeriod] = useState<Period>("FY2024")
   const [metric, setMetric] = useState<Metric>("revenue")
   const [appearance, setAppearance] = useState<Appearance>(getInitialAppearance)
+  const [navLayout, setNavLayout] = useState<NavLayout>(getInitialNavLayout)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [activePage, setActivePage] = useState<ActivePage>("overview")
   const settingsTriggerRef = useRef<HTMLButtonElement>(null)
 
+  // Document list state kept in shared state above page
+  const [documents, setDocuments] = useState<LocalDocument[]>([])
+  const [activeSimId, setActiveSimId] = useState<string | null>(null)
+  const simIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Appearance theme listener
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)")
     const applyTheme = () => {
@@ -828,23 +1066,144 @@ export default function App() {
     try {
       window.localStorage.setItem(APPEARANCE_KEY, appearance)
     } catch {
-      // The active preference still applies for this session.
+      // Storage fallback
     }
     return () => media.removeEventListener("change", applyTheme)
   }, [appearance])
 
+  // Body panel open lock
   useEffect(() => {
     document.body.classList.toggle("panel-open", settingsOpen)
     return () => document.body.classList.remove("panel-open")
   }, [settingsOpen])
 
+  // Clean up simulation timer on unmount
+  useEffect(() => {
+    return () => {
+      if (simIntervalRef.current) {
+        clearInterval(simIntervalRef.current)
+        simIntervalRef.current = null
+      }
+    }
+  }, [])
+
+  // When leaving Documents page, safely cancel active simulation and reset entry to "idle" ("Selected locally")
+  useEffect(() => {
+    if (activePage !== "documents" && activeSimId) {
+      if (simIntervalRef.current) {
+        clearInterval(simIntervalRef.current)
+        simIntervalRef.current = null
+      }
+      setDocuments((prev) =>
+        prev.map((doc) =>
+          doc.id === activeSimId ? { ...doc, status: "idle", progress: 0 } : doc
+        )
+      )
+      setActiveSimId(null)
+    }
+  }, [activePage, activeSimId])
+
+  const handleNavLayoutChange = (layout: NavLayout) => {
+    setNavLayout(layout)
+    try {
+      window.localStorage.setItem(NAV_LAYOUT_KEY, layout)
+    } catch {
+      // Storage fallback
+    }
+  }
+
   const openSettings = (trigger: HTMLButtonElement) => {
     settingsTriggerRef.current = trigger
     setSettingsOpen(true)
   }
+
   const closeSettings = () => {
     setSettingsOpen(false)
     window.requestAnimationFrame(() => settingsTriggerRef.current?.focus())
+  }
+
+  // Document management handlers
+  const handleAddDocument = (file: File): { ok: boolean; error?: string } => {
+    const isDuplicate = documents.some(
+      (d) =>
+        d.file.name === file.name &&
+        d.file.size === file.size &&
+        d.file.lastModified === file.lastModified
+    )
+    if (isDuplicate) {
+      return { ok: false, error: "This file is already in your list." }
+    }
+
+    const newDoc: LocalDocument = {
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      file,
+      name: file.name,
+      size: file.size,
+      addedAt: new Date(),
+      status: "idle",
+      progress: 0,
+    }
+
+    setDocuments((prev) => [newDoc, ...prev])
+    return { ok: true }
+  }
+
+  const handleRemoveDocument = (id: string) => {
+    if (activeSimId === id) {
+      if (simIntervalRef.current) {
+        clearInterval(simIntervalRef.current)
+        simIntervalRef.current = null
+      }
+      setActiveSimId(null)
+    }
+    setDocuments((prev) => prev.filter((d) => d.id !== id))
+  }
+
+  const handleStartSim = (id: string) => {
+    if (activeSimId) return // Allow only one simulation at a time
+    setActiveSimId(id)
+    setDocuments((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, status: "simulating", progress: 0 } : d))
+    )
+
+    const STEPS = 12
+    const INTERVAL = 380
+    let step = 0
+
+    simIntervalRef.current = setInterval(() => {
+      step++
+      const pct = Math.round((step / STEPS) * 100)
+      setDocuments((prev) =>
+        prev.map((d) => (d.id === id ? { ...d, progress: pct } : d))
+      )
+      if (step >= STEPS) {
+        if (simIntervalRef.current) {
+          clearInterval(simIntervalRef.current)
+          simIntervalRef.current = null
+        }
+        setActiveSimId(null)
+        setDocuments((prev) =>
+          prev.map((d) =>
+            d.id === id ? { ...d, status: "done", progress: 100 } : d
+          )
+        )
+      }
+    }, INTERVAL)
+  }
+
+  const handleCancelSim = (id: string) => {
+    if (activeSimId === id) {
+      if (simIntervalRef.current) {
+        clearInterval(simIntervalRef.current)
+        simIntervalRef.current = null
+      }
+      setActiveSimId(null)
+      setDocuments((prev) =>
+        prev.map((d) =>
+          d.id === id ? { ...d, status: "idle", progress: 0 } : d
+        )
+      )
+    }
   }
 
   const current = financialData[period]
@@ -854,110 +1213,110 @@ export default function App() {
   const hasComparison = period === "FY2024"
 
   return (
-    <div className="app-shell">
-      <div className="ambient ambient-one" />
-      <div className="ambient ambient-two" />
-      <DesktopNavigation
-        activePage={activePage}
-        onNavigate={setActivePage}
-        onSettings={openSettings}
-      />
-      <MobileNavigation
-        activePage={activePage}
-        menuOpen={menuOpen}
-        onMenu={() => setMenuOpen((value) => !value)}
-        onNavigate={setActivePage}
-        onSettings={openSettings}
-      />
+    <div
+      className={`app-shell ${
+        navLayout === "sidebar" ? "layout-sidebar" : "layout-topbar"
+      }`}
+    >
+      {/* Desktop Layout 1: Sidebar (Rendered ONLY when navLayout is sidebar) */}
+      {navLayout === "sidebar" && (
+        <Sidebar
+          activePage={activePage}
+          onNavigate={setActivePage}
+          onSettings={openSettings}
+        />
+      )}
 
-      <main className="content">
-        {activePage === "documents" ? (
-          <DocumentsPage onBack={() => setActivePage("overview")} />
-        ) : (
-          <>
-            <header className="page-header entrance entrance-1">
-              <div className="company-context">
-                <h1>Northstar Manufacturing</h1>
-                <p>
-                  Financial overview <span aria-hidden="true">·</span> USD millions
-                </p>
-              </div>
-              <div className="header-controls">
-                <SlidingSelector
-                  ariaLabel="Reporting period"
-                  className="period-selector"
-                  onChange={setPeriod}
-                  options={[
-                    { key: "FY2024", label: "FY2024" },
-                    { key: "FY2023", label: "FY2023" },
-                  ]}
-                  value={period}
-                />
-                <span className="sample-badge">Sample data</span>
-              </div>
-              <p className="sample-note">
-                Fictional company and figures. No document has been analyzed.
-              </p>
-            </header>
-
-            <Surface className="metric-strip entrance entrance-2">
-              <MetricCell
-                animateValue
-                change={
-                  hasComparison
-                    ? comparison(current.revenue, previous.revenue)
-                    : undefined
-                }
-                label="Revenue"
-                value={current.revenue}
-              />
-              <MetricCell
-                change={
-                  hasComparison
-                    ? comparison(current.income, previous.income)
-                    : undefined
-                }
-                label="Net income"
-                value={current.income}
-              />
-              <MetricCell
-                change={
-                  hasComparison
-                    ? comparison(current.assets, previous.assets)
-                    : undefined
-                }
-                label="Total assets"
-                neutral
-                value={current.assets}
-              />
-              <MetricCell
-                change={
-                  hasComparison
-                    ? comparison(current.cashFlow, previous.cashFlow)
-                    : undefined
-                }
-                label="Operating cash flow"
-                value={current.cashFlow}
-              />
-            </Surface>
-
-            <div className="main-grid entrance entrance-3">
-              <PerformanceChart metric={metric} onMetric={setMetric} />
-              <WhatChanged period={period} />
-            </div>
-
-            <div className="entrance entrance-4">
-              <Documents />
-            </div>
-          </>
+      <div className="main-area">
+        {/* Desktop Layout 2: Top Bar (Rendered ONLY when navLayout is topbar) */}
+        {navLayout === "topbar" && (
+          <TopBarNav
+            activePage={activePage}
+            onNavigate={setActivePage}
+            onSettings={openSettings}
+          />
         )}
-      </main>
+
+        {/* Mobile Top Bar (Visible ONLY on mobile screens <= 880px) */}
+        <MobileTopBar
+          onMenu={() => setMenuOpen(true)}
+          onSettings={openSettings}
+        />
+
+        {/* Accessible Mobile Drawer */}
+        <MobileDrawer
+          activePage={activePage}
+          isOpen={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          onNavigate={setActivePage}
+          onSettings={openSettings}
+        />
+
+        <main className="page-content">
+          {activePage === "documents" ? (
+            <DocumentsPage
+              activeSimId={activeSimId}
+              documents={documents}
+              onAddDocument={handleAddDocument}
+              onBack={() => setActivePage("overview")}
+              onCancelSim={handleCancelSim}
+              onRemoveDocument={handleRemoveDocument}
+              onStartSim={handleStartSim}
+            />
+          ) : (
+            <>
+              <div className="page-heading-row entrance entrance-1">
+                <div>
+                  <h1>Dashboard</h1>
+                  <p>Northstar Manufacturing · USD millions</p>
+                </div>
+                <div className="heading-controls">
+                  <SlidingSelector
+                    ariaLabel="Reporting period"
+                    className="period-selector"
+                    onChange={setPeriod}
+                    options={[
+                      { key: "FY2024", label: "FY2024" },
+                      { key: "FY2023", label: "FY2023" },
+                    ]}
+                    value={period}
+                  />
+                  <span className="sample-badge">Sample data</span>
+                </div>
+              </div>
+              <p className="sample-notice entrance entrance-1">
+                Fictional sample data. No document has been analyzed.
+              </p>
+
+              <div className="dashboard-grid entrance entrance-2">
+                <aside className="snapshot-col">
+                  <FinancialSnapshot
+                    comparison={comparison}
+                    current={current}
+                    hasComparison={hasComparison}
+                    period={period}
+                  />
+                </aside>
+                <div className="charts-col">
+                  <PerformanceChart metric={metric} onMetric={setMetric} />
+                  <div className="lower-row entrance entrance-3">
+                    <FinancialIndicators period={period} />
+                    <SampleDocuments onNavigate={setActivePage} />
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </main>
+      </div>
 
       {settingsOpen && (
         <SettingsPanel
           appearance={appearance}
+          navLayout={navLayout}
           onAppearance={setAppearance}
           onClose={closeSettings}
+          onNavLayout={handleNavLayoutChange}
         />
       )}
     </div>
