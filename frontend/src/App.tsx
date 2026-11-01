@@ -33,13 +33,13 @@ const financialData = {
   },
 }
 
-const metricOptions: { key: Metric label: string }[] = [
+const metricOptions: { key: Metric; label: string }[] = [
   { key: "revenue", label: "Revenue" },
   { key: "income", label: "Net income" },
   { key: "cashFlow", label: "Cash flow" },
 ]
 
-const navItems: { label: string icon: IconName active?: boolean }[] = [
+const navItems: { label: string; icon: IconName; active?: boolean }[] = [
   { label: "Overview", icon: "overview", active: true },
   { label: "Documents", icon: "document" },
   { label: "Analysis", icon: "analysis" },
@@ -47,7 +47,7 @@ const navItems: { label: string icon: IconName active?: boolean }[] = [
   { label: "Risks", icon: "risk" },
 ]
 
-function Icon({ name, size = 18 }: { name: IconName size?: number }) {
+function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
   const paths: Record<IconName, ReactNode> = {
     overview: (
       <>
@@ -264,7 +264,7 @@ function SlidingSelector<T extends string>({
   ariaLabel: string
   className: string
   onChange: (value: T) => void
-  options: { key: T label: string }[]
+  options: { key: T; label: string }[]
   value: T
 }) {
   const activeIndex = options.findIndex((option) => option.key === value)
@@ -399,7 +399,7 @@ function MetricCell({
   )
 }
 
-function InfoTip({ label, children }: { label: string children: ReactNode }) {
+function InfoTip({ label, children }: { label: string; children: ReactNode }) {
   const [open, setOpen] = useState(false)
   return (
     <span className="info-tip">

@@ -1,0 +1,10 @@
+{
+  "description": "Explore fictional company financials with interactive dashboards, performance charts, health metrics, and sample documents for students and financial analysts.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
