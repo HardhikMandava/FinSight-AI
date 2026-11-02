@@ -9,6 +9,9 @@ import {
 import DocumentsPage, { type LocalDocument } from "./components/DocumentsPage"
 import AnalysisPage from "./components/AnalysisPage"
 import RisksPage from "./components/RisksPage"
+import AssistantPage from "./components/AssistantPage"
+import LandingPage from "./components/LandingPage"
+import { Brand, FinSightMark } from "./components/FinSightLogo"
 import {
   type Period,
   PERIODS_NEWEST_FIRST,
@@ -21,8 +24,41 @@ import {
 type Metric = "revenue" | "income" | "cashFlow"
 type Appearance = "dark" | "light" | "system"
 type NavLayout = "sidebar" | "topbar"
-type ActivePage = "overview" | "documents" | "analysis" | "risks"
-type IconName = "overview" | "document" | "analysis" | "assistant" | "risk" | "settings" | "menu" | "close" | "arrowUp" | "arrowDown" | "minus" | "info" | "sun" | "moon" | "system" | "check" | "externalLink"
+export type AppRoute = "/" | "overview" | "documents" | "analysis" | "risks" | "assistant"
+export type WorkspacePage = "overview" | "documents" | "analysis" | "risks" | "assistant"
+type IconName =
+  | "overview"
+  | "document"
+  | "analysis"
+  | "assistant"
+  | "risk"
+  | "settings"
+  | "menu"
+  | "close"
+  | "arrowUp"
+  | "arrowDown"
+  | "minus"
+  | "info"
+  | "sun"
+  | "moon"
+  | "system"
+  | "check"
+  | "externalLink"
+  | "globe"
+
+function parseHash(hash: string): AppRoute {
+  const clean = hash.replace(/^#\/?/, "").split("?")[0].trim().toLowerCase()
+  if (
+    clean === "overview" ||
+    clean === "documents" ||
+    clean === "analysis" ||
+    clean === "risks" ||
+    clean === "assistant"
+  ) {
+    return clean
+  }
+  return "/"
+}
 
 const metricOptions: { key: Metric; label: string }[] = [
   { key: "revenue", label: "Revenue" },
@@ -30,12 +66,12 @@ const metricOptions: { key: Metric; label: string }[] = [
   { key: "cashFlow", label: "Cash flow" },
 ]
 
-const navItems: { label: string; icon: IconName; page?: ActivePage }[] = [
+const navItems: { label: string; icon: IconName; page: WorkspacePage }[] = [
   { label: "Overview", icon: "overview", page: "overview" },
   { label: "Documents", icon: "document", page: "documents" },
   { label: "Analysis", icon: "analysis", page: "analysis" },
-  { label: "Assistant", icon: "assistant" },
   { label: "Risks", icon: "risk", page: "risks" },
+  { label: "Assistant", icon: "assistant", page: "assistant" },
 ]
 
 function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
@@ -106,6 +142,13 @@ function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
         <path d="M15 3h6v6M10 14 21 3" />
       </>
     ),
+    globe: (
+      <>
+        <circle cx="12" cy="12" r="10" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      </>
+    ),
   }
 
   return (
@@ -138,55 +181,44 @@ const Button =
     },
   )
 
-function Brand({ mini = false }: { mini?: boolean }) {
-  return (
-    <div className={`brand ${mini ? "brand-mini" : ""}`} title="FinSight AI">
-      <div className="brand-mark" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-      </div>
-      {!mini && <span>FinSight AI</span>}
-    </div>
-  )
-}
-
 /* ─── Desktop Layout 1: Floating Sidebar Rail ───────────────────────────────── */
 
 function Sidebar({
   activePage,
   onNavigate,
+  onNavigateHome,
   onSettings,
 }: {
-  activePage: ActivePage
-  onNavigate: (page: ActivePage) => void
+  activePage: WorkspacePage
+  onNavigate: (page: WorkspacePage) => void
+  onNavigateHome: () => void
   onSettings: (trigger: HTMLButtonElement) => void
 }) {
   return (
     <aside aria-label="Sidebar navigation" className="sidebar-rail-wrap">
       <nav aria-label="Sidebar destinations" className="sidebar surface">
         <div className="sidebar-brand-wrap">
-          <Brand mini />
+          <button
+            aria-label="FinSight AI - Return to public site"
+            className="sidebar-brand-button button"
+            data-tooltip="Public site"
+            onClick={onNavigateHome}
+            type="button"
+          >
+            <FinSightMark size={28} />
+          </button>
         </div>
         <div className="sidebar-links">
           {navItems.map((item) => {
-            const isActive = item.page !== undefined && item.page === activePage
-            const isEnabled = item.page !== undefined
+            const isActive = item.page === activePage
             return (
               <Button
                 key={item.label}
                 aria-current={isActive ? "page" : undefined}
-                aria-disabled={!isEnabled}
                 aria-label={item.label}
-                className={`sidebar-button ${isActive ? "active" : ""} ${
-                  !isEnabled ? "unavailable" : ""
-                }`}
+                className={`sidebar-button ${isActive ? "active" : ""}`}
                 data-tooltip={item.label}
-                onClick={
-                  isEnabled && !isActive
-                    ? () => onNavigate(item.page!)
-                    : undefined
-                }
+                onClick={!isActive ? () => onNavigate(item.page) : undefined}
               >
                 <Icon name={item.icon} size={18} />
               </Button>
@@ -194,6 +226,14 @@ function Sidebar({
           })}
         </div>
         <div className="sidebar-bottom">
+          <Button
+            aria-label="Public site"
+            className="sidebar-button sidebar-public-site"
+            data-tooltip="Public site"
+            onClick={onNavigateHome}
+          >
+            <Icon name="globe" size={18} />
+          </Button>
           <Button
             aria-label="Settings"
             className="sidebar-button sidebar-settings"
@@ -213,38 +253,27 @@ function Sidebar({
 function TopBarNav({
   activePage,
   onNavigate,
+  onNavigateHome,
   onSettings,
 }: {
-  activePage: ActivePage
-  onNavigate: (page: ActivePage) => void
+  activePage: WorkspacePage
+  onNavigate: (page: WorkspacePage) => void
+  onNavigateHome: () => void
   onSettings: (trigger: HTMLButtonElement) => void
 }) {
   return (
     <header className="topbar-header-wrap" role="banner">
       <div className="topbar-floating-bar surface">
-        <Brand />
+        <Brand onClick={onNavigateHome} />
         <nav aria-label="Primary navigation" className="top-nav-capsule">
-          <span className="sr-only" id="coming-next-top">
-            Coming next. This destination is not available in the prototype.
-          </span>
           {navItems.map((item) => {
-            const isActive = item.page !== undefined && item.page === activePage
-            const isEnabled = item.page !== undefined
+            const isActive = item.page === activePage
             return (
               <Button
                 key={item.label}
                 aria-current={isActive ? "page" : undefined}
-                aria-describedby={!isEnabled ? "coming-next-top" : undefined}
-                aria-disabled={!isEnabled}
-                className={`top-nav-link ${isActive ? "active" : ""} ${
-                  !isEnabled ? "unavailable" : ""
-                }`}
-                data-tooltip={!isEnabled ? "Coming next" : undefined}
-                onClick={
-                  isEnabled && !isActive
-                    ? () => onNavigate(item.page!)
-                    : undefined
-                }
+                className={`top-nav-link ${isActive ? "active" : ""}`}
+                onClick={!isActive ? () => onNavigate(item.page) : undefined}
               >
                 {item.label}
               </Button>
@@ -252,6 +281,13 @@ function TopBarNav({
           })}
         </nav>
         <div className="topbar-right">
+          <Button
+            className="public-site-button"
+            onClick={onNavigateHome}
+          >
+            <Icon name="globe" size={14} />
+            <span>Public site</span>
+          </Button>
           <Button
             className="settings-button"
             onClick={(event) => onSettings(event.currentTarget)}
@@ -269,14 +305,16 @@ function TopBarNav({
 
 function MobileTopBar({
   onMenu,
+  onNavigateHome,
   onSettings,
 }: {
   onMenu: () => void
+  onNavigateHome: () => void
   onSettings: (trigger: HTMLButtonElement) => void
 }) {
   return (
     <header className="mobile-top-bar" role="banner">
-      <Brand />
+      <Brand onClick={onNavigateHome} />
       <div className="mobile-top-actions">
         <Button
           aria-label="Settings"
@@ -303,12 +341,14 @@ function MobileDrawer({
   isOpen,
   onClose,
   onNavigate,
+  onNavigateHome,
   onSettings,
 }: {
-  activePage: ActivePage
+  activePage: WorkspacePage
   isOpen: boolean
   onClose: () => void
-  onNavigate: (page: ActivePage) => void
+  onNavigate: (page: WorkspacePage) => void
+  onNavigateHome: () => void
   onSettings: (trigger: HTMLButtonElement) => void
 }) {
   const drawerRef = useRef<HTMLElement>(null)
@@ -367,7 +407,12 @@ function MobileDrawer({
         role="dialog"
       >
         <div className="mobile-drawer-header">
-          <Brand />
+          <Brand
+            onClick={() => {
+              onNavigateHome()
+              onClose()
+            }}
+          />
           <Button
             aria-label="Close menu"
             className="close-button"
@@ -378,31 +423,32 @@ function MobileDrawer({
         </div>
         <nav aria-label="Mobile destinations" className="mobile-drawer-nav">
           {navItems.map((item) => {
-            const isActive = item.page !== undefined && item.page === activePage
-            const isEnabled = item.page !== undefined
+            const isActive = item.page === activePage
             return (
               <Button
                 key={item.label}
                 aria-current={isActive ? "page" : undefined}
-                aria-disabled={!isEnabled}
                 className={`mobile-drawer-link ${isActive ? "active" : ""}`}
-                onClick={
-                  isEnabled
-                    ? () => {
-                        if (!isActive) onNavigate(item.page!)
-                        onClose()
-                      }
-                    : undefined
-                }
+                onClick={() => {
+                  if (!isActive) onNavigate(item.page)
+                  onClose()
+                }}
               >
                 <Icon name={item.icon} size={18} />
                 <span>{item.label}</span>
-                {!isEnabled && (
-                  <small className="coming-next-badge">Coming next</small>
-                )}
               </Button>
             )
           })}
+          <Button
+            className="mobile-drawer-link mobile-drawer-public"
+            onClick={() => {
+              onNavigateHome()
+              onClose()
+            }}
+          >
+            <Icon name="globe" size={18} />
+            <span>Public site</span>
+          </Button>
         </nav>
         <div className="mobile-drawer-footer">
           <Button
@@ -1305,19 +1351,40 @@ function getInitialNavLayout(): NavLayout {
 /* ─── Main App Component ─────────────────────────────────────────────────────── */
 
 export default function App() {
+  const [route, setRoute] = useState<AppRoute>(() => parseHash(window.location.hash))
   const [period, setPeriod] = useState<Period>("FY2024")
   const [metric, setMetric] = useState<Metric>("revenue")
   const [appearance, setAppearance] = useState<Appearance>(getInitialAppearance)
   const [navLayout, setNavLayout] = useState<NavLayout>(getInitialNavLayout)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [activePage, setActivePage] = useState<ActivePage>("overview")
   const settingsTriggerRef = useRef<HTMLButtonElement>(null)
 
   // Document list state kept in shared state above page
   const [documents, setDocuments] = useState<LocalDocument[]>([])
   const [activeSimId, setActiveSimId] = useState<string | null>(null)
   const simIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Sync hash changes (Browser Back / Forward buttons)
+  useEffect(() => {
+    const handleHashChange = () => {
+      setRoute(parseHash(window.location.hash))
+    }
+    window.addEventListener("hashchange", handleHashChange)
+    return () => window.removeEventListener("hashchange", handleHashChange)
+  }, [])
+
+  const navigate = (to: AppRoute) => {
+    const targetHash = to === "/" ? "#/" : `#/${to}`
+    if (window.location.hash !== targetHash) {
+      window.location.hash = targetHash
+    } else {
+      setRoute(to)
+    }
+  }
+
+  const activePage: WorkspacePage = route === "/" ? "overview" : route
+  const setActivePage = (page: WorkspacePage) => navigate(page)
 
   // Appearance theme listener
   useEffect(() => {
@@ -1487,6 +1554,16 @@ export default function App() {
     ((value - prior) / prior) * 100
   const hasComparison = Boolean(previous)
 
+  if (route === "/") {
+    return (
+      <LandingPage
+        onExploreDemo={() => {
+          navigate("overview")
+        }}
+      />
+    )
+  }
+
   return (
     <div
       className={`app-shell ${
@@ -1498,6 +1575,7 @@ export default function App() {
         <Sidebar
           activePage={activePage}
           onNavigate={setActivePage}
+          onNavigateHome={() => navigate("/")}
           onSettings={openSettings}
         />
       )}
@@ -1508,6 +1586,7 @@ export default function App() {
           <TopBarNav
             activePage={activePage}
             onNavigate={setActivePage}
+            onNavigateHome={() => navigate("/")}
             onSettings={openSettings}
           />
         )}
@@ -1515,6 +1594,7 @@ export default function App() {
         {/* Mobile Top Bar (Visible ONLY on mobile screens <= 880px) */}
         <MobileTopBar
           onMenu={() => setMenuOpen(true)}
+          onNavigateHome={() => navigate("/")}
           onSettings={openSettings}
         />
 
@@ -1524,6 +1604,7 @@ export default function App() {
           isOpen={menuOpen}
           onClose={() => setMenuOpen(false)}
           onNavigate={setActivePage}
+          onNavigateHome={() => navigate("/")}
           onSettings={openSettings}
         />
 
@@ -1550,11 +1631,13 @@ export default function App() {
               onPeriodChange={setPeriod}
               selectedPeriod={period}
             />
+          ) : activePage === "assistant" ? (
+            <AssistantPage onNavigate={setActivePage} />
           ) : (
             <>
               <div className="page-heading-row entrance entrance-1">
                 <div>
-                  <h1>Dashboard</h1>
+                  <h1>Overview</h1>
                   <p>Northstar Manufacturing · USD millions</p>
                 </div>
                 <div className="heading-controls">
@@ -1571,9 +1654,35 @@ export default function App() {
                   <span className="sample-badge">Sample data</span>
                 </div>
               </div>
-              <p className="sample-notice entrance entrance-1">
-                {SAMPLE_NOTICE}
-              </p>
+
+              {/* Quick Jump Navigation Pills */}
+              <div className="overview-quick-pills entrance entrance-2">
+                <span className="quick-pills-label">Quick access:</span>
+                <button
+                  className="button quick-pill-btn"
+                  onClick={() => setActivePage("analysis")}
+                  type="button"
+                >
+                  <Icon name="analysis" size={14} />
+                  <span>Financial analysis</span>
+                </button>
+                <button
+                  className="button quick-pill-btn"
+                  onClick={() => setActivePage("risks")}
+                  type="button"
+                >
+                  <Icon name="risk" size={14} />
+                  <span>Risk indicators</span>
+                </button>
+                <button
+                  className="button quick-pill-btn"
+                  onClick={() => setActivePage("documents")}
+                  type="button"
+                >
+                  <Icon name="document" size={14} />
+                  <span>Documents</span>
+                </button>
+              </div>
 
               <div className="dashboard-grid entrance entrance-2">
                 <aside className="snapshot-col">
@@ -1599,6 +1708,11 @@ export default function App() {
               </div>
             </>
           )}
+
+          {/* Single Workspace Footer with exact sample disclosure */}
+          <footer className="workspace-footer">
+            <p className="sample-data-disclosure">{SAMPLE_NOTICE}</p>
+          </footer>
         </main>
       </div>
 

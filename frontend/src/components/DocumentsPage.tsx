@@ -11,8 +11,8 @@ const MAX_SIZE_LABEL = "20 MB"
 
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KiB`
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MiB`
 }
 
 export function formatTime(date: Date): string {
@@ -142,6 +142,14 @@ export default function DocumentsPage({
         return
       }
 
+      const isDuplicate = documents.some(
+        (d) => d.name.toLowerCase() === file.name.toLowerCase(),
+      )
+      if (isDuplicate) {
+        setError(`File "${file.name}" is already in your session documents list.`)
+        return
+      }
+
       const result = onAddDocument(file)
       if (!result.ok && result.error) {
         setError(result.error)
@@ -265,8 +273,7 @@ export default function DocumentsPage({
           <div>
             <h2>Your documents</h2>
             <p className="docs-memory-notice">
-              Files are stored in memory for this session only. They are not
-              uploaded and will be cleared when you refresh.
+              Files are held in memory for this session. They are not uploaded and are cleared when you refresh.
             </p>
           </div>
           {documents.length > 0 && (
@@ -358,6 +365,23 @@ export default function DocumentsPage({
                           type="button"
                         >
                           Cancel
+                        </button>
+                      )}
+
+                      {doc.status === "done" && (
+                        <button
+                          aria-disabled={isAnotherSimRunning}
+                          className="button docs-action-btn docs-btn-simulate"
+                          disabled={isAnotherSimRunning}
+                          onClick={() => onStartSim(doc.id)}
+                          title={
+                            isAnotherSimRunning
+                              ? "Another simulation is currently in progress"
+                              : undefined
+                          }
+                          type="button"
+                        >
+                          Retry simulation
                         </button>
                       )}
 

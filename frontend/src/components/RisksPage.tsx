@@ -3,7 +3,6 @@ import {
   type Period,
   PERIODS_NEWEST_FIRST,
   COMPANY_NAME,
-  SAMPLE_NOTICE,
   CURRENCY_LABEL,
 } from "../data/financialData"
 import {
@@ -13,7 +12,7 @@ import {
 } from "../utils/riskEvaluation"
 
 interface RisksPageProps {
-  onNavigate: (page: "overview" | "documents" | "analysis" | "risks") => void
+  onNavigate: (page: "overview" | "documents" | "analysis" | "risks" | "assistant") => void
   selectedPeriod: Period
   onPeriodChange: (period: Period) => void
 }
@@ -162,15 +161,6 @@ export default function RisksPage({
           <span className="sample-badge">Sample dataset</span>
         </div>
       </header>
-
-      {/* Prominent Sample Notice */}
-      <aside
-        aria-label="Sample data notice"
-        className="sample-notice-banner entrance entrance-1"
-      >
-        <InfoIcon />
-        <span>{SAMPLE_NOTICE}</span>
-      </aside>
 
       {/* Summary Counts Strip */}
       <section
