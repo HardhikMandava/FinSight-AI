@@ -6,54 +6,23 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react"
-import DocumentsPage, {
-  type LocalDocument,
-} from "./components/DocumentsPage"
+import DocumentsPage, { type LocalDocument } from "./components/DocumentsPage"
+import AnalysisPage from "./components/AnalysisPage"
+import RisksPage from "./components/RisksPage"
+import {
+  type Period,
+  PERIODS_NEWEST_FIRST,
+  PERIODS_CHRONOLOGICAL,
+  financialData,
+  getPriorPeriod,
+  SAMPLE_NOTICE,
+} from "./data/financialData"
 
-type Period = "FY2024" | "FY2023"
 type Metric = "revenue" | "income" | "cashFlow"
 type Appearance = "dark" | "light" | "system"
 type NavLayout = "sidebar" | "topbar"
-type ActivePage = "overview" | "documents"
-type IconName =
-  | "overview"
-  | "document"
-  | "analysis"
-  | "assistant"
-  | "risk"
-  | "settings"
-  | "menu"
-  | "close"
-  | "arrowUp"
-  | "arrowDown"
-  | "minus"
-  | "info"
-  | "sun"
-  | "moon"
-  | "system"
-  | "check"
-  | "externalLink"
-
-const financialData = {
-  FY2023: {
-    revenue: 480,
-    income: 48,
-    assets: 600,
-    cashFlow: 65,
-    currentAssets: 180,
-    currentLiabilities: 100,
-    margin: 10,
-  },
-  FY2024: {
-    revenue: 516,
-    income: 43.86,
-    assets: 640,
-    cashFlow: 58,
-    currentAssets: 190,
-    currentLiabilities: 120,
-    margin: 8.5,
-  },
-}
+type ActivePage = "overview" | "documents" | "analysis" | "risks"
+type IconName = "overview" | "document" | "analysis" | "assistant" | "risk" | "settings" | "menu" | "close" | "arrowUp" | "arrowDown" | "minus" | "info" | "sun" | "moon" | "system" | "check" | "externalLink"
 
 const metricOptions: { key: Metric; label: string }[] = [
   { key: "revenue", label: "Revenue" },
@@ -64,9 +33,9 @@ const metricOptions: { key: Metric; label: string }[] = [
 const navItems: { label: string; icon: IconName; page?: ActivePage }[] = [
   { label: "Overview", icon: "overview", page: "overview" },
   { label: "Documents", icon: "document", page: "documents" },
-  { label: "Analysis", icon: "analysis" },
+  { label: "Analysis", icon: "analysis", page: "analysis" },
   { label: "Assistant", icon: "assistant" },
-  { label: "Risks", icon: "risk" },
+  { label: "Risks", icon: "risk", page: "risks" },
 ]
 
 function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
@@ -153,16 +122,21 @@ function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
   )
 }
 
-const Button = forwardRef<
-  HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement>
->(function Button({ children, className = "", ...props }, ref) {
-  return (
-    <button className={`button ${className}`} ref={ref} type="button" {...props}>
-      {children}
-    </button>
+const Button =
+  forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
+    function Button({ children, className = "", ...props }, ref) {
+      return (
+        <button
+          className={`button ${className}`}
+          ref={ref}
+          type="button"
+          {...props}
+        >
+          {children}
+        </button>
+      )
+    },
   )
-})
 
 function Brand({ mini = false }: { mini?: boolean }) {
   return (
@@ -177,7 +151,7 @@ function Brand({ mini = false }: { mini?: boolean }) {
   )
 }
 
-/* ─── Desktop Layout 1: Sidebar ─────────────────────────────────────────────── */
+/* ─── Desktop Layout 1: Floating Sidebar Rail ───────────────────────────────── */
 
 function Sidebar({
   activePage,
@@ -189,46 +163,52 @@ function Sidebar({
   onSettings: (trigger: HTMLButtonElement) => void
 }) {
   return (
-    <nav aria-label="Sidebar navigation" className="sidebar">
-      <div className="sidebar-brand-wrap">
-        <Brand mini />
-      </div>
-      <div className="sidebar-links">
-        {navItems.map((item) => {
-          const isActive = item.page !== undefined && item.page === activePage
-          const isEnabled = item.page !== undefined
-          return (
-            <Button
-              key={item.label}
-              aria-current={isActive ? "page" : undefined}
-              aria-disabled={!isEnabled}
-              aria-label={item.label}
-              className={`sidebar-button ${isActive ? "active" : ""} ${!isEnabled ? "unavailable" : ""}`}
-              data-tooltip={item.label}
-              onClick={
-                isEnabled && !isActive ? () => onNavigate(item.page!) : undefined
-              }
-            >
-              <Icon name={item.icon} size={18} />
-            </Button>
-          )
-        })}
-      </div>
-      <div className="sidebar-bottom">
-        <Button
-          aria-label="Settings"
-          className="sidebar-button sidebar-settings"
-          data-tooltip="Settings"
-          onClick={(event) => onSettings(event.currentTarget)}
-        >
-          <Icon name="settings" size={18} />
-        </Button>
-      </div>
-    </nav>
+    <aside aria-label="Sidebar navigation" className="sidebar-rail-wrap">
+      <nav aria-label="Sidebar destinations" className="sidebar surface">
+        <div className="sidebar-brand-wrap">
+          <Brand mini />
+        </div>
+        <div className="sidebar-links">
+          {navItems.map((item) => {
+            const isActive = item.page !== undefined && item.page === activePage
+            const isEnabled = item.page !== undefined
+            return (
+              <Button
+                key={item.label}
+                aria-current={isActive ? "page" : undefined}
+                aria-disabled={!isEnabled}
+                aria-label={item.label}
+                className={`sidebar-button ${isActive ? "active" : ""} ${
+                  !isEnabled ? "unavailable" : ""
+                }`}
+                data-tooltip={item.label}
+                onClick={
+                  isEnabled && !isActive
+                    ? () => onNavigate(item.page!)
+                    : undefined
+                }
+              >
+                <Icon name={item.icon} size={18} />
+              </Button>
+            )
+          })}
+        </div>
+        <div className="sidebar-bottom">
+          <Button
+            aria-label="Settings"
+            className="sidebar-button sidebar-settings"
+            data-tooltip="Settings"
+            onClick={(event) => onSettings(event.currentTarget)}
+          >
+            <Icon name="settings" size={18} />
+          </Button>
+        </div>
+      </nav>
+    </aside>
   )
 }
 
-/* ─── Desktop Layout 2: Top Bar ─────────────────────────────────────────────── */
+/* ─── Desktop Layout 2: Floating Top Bar Capsule ───────────────────────────── */
 
 function TopBarNav({
   activePage,
@@ -240,40 +220,46 @@ function TopBarNav({
   onSettings: (trigger: HTMLButtonElement) => void
 }) {
   return (
-    <header className="topbar-nav" role="banner">
-      <Brand />
-      <nav aria-label="Primary navigation" className="top-nav">
-        <span className="sr-only" id="coming-next-top">
-          Coming next. This destination is not available in the prototype.
-        </span>
-        {navItems.map((item) => {
-          const isActive = item.page !== undefined && item.page === activePage
-          const isEnabled = item.page !== undefined
-          return (
-            <Button
-              key={item.label}
-              aria-current={isActive ? "page" : undefined}
-              aria-describedby={!isEnabled ? "coming-next-top" : undefined}
-              aria-disabled={!isEnabled}
-              className={`top-nav-link ${isActive ? "active" : ""} ${!isEnabled ? "unavailable" : ""}`}
-              data-tooltip={!isEnabled ? "Coming next" : undefined}
-              onClick={
-                isEnabled && !isActive ? () => onNavigate(item.page!) : undefined
-              }
-            >
-              {item.label}
-            </Button>
-          )
-        })}
-      </nav>
-      <div className="topbar-right">
-        <Button
-          className="settings-button"
-          onClick={(event) => onSettings(event.currentTarget)}
-        >
-          <Icon name="settings" size={14} />
-          <span>Settings</span>
-        </Button>
+    <header className="topbar-header-wrap" role="banner">
+      <div className="topbar-floating-bar surface">
+        <Brand />
+        <nav aria-label="Primary navigation" className="top-nav-capsule">
+          <span className="sr-only" id="coming-next-top">
+            Coming next. This destination is not available in the prototype.
+          </span>
+          {navItems.map((item) => {
+            const isActive = item.page !== undefined && item.page === activePage
+            const isEnabled = item.page !== undefined
+            return (
+              <Button
+                key={item.label}
+                aria-current={isActive ? "page" : undefined}
+                aria-describedby={!isEnabled ? "coming-next-top" : undefined}
+                aria-disabled={!isEnabled}
+                className={`top-nav-link ${isActive ? "active" : ""} ${
+                  !isEnabled ? "unavailable" : ""
+                }`}
+                data-tooltip={!isEnabled ? "Coming next" : undefined}
+                onClick={
+                  isEnabled && !isActive
+                    ? () => onNavigate(item.page!)
+                    : undefined
+                }
+              >
+                {item.label}
+              </Button>
+            )
+          })}
+        </nav>
+        <div className="topbar-right">
+          <Button
+            className="settings-button"
+            onClick={(event) => onSettings(event.currentTarget)}
+          >
+            <Icon name="settings" size={14} />
+            <span>Settings</span>
+          </Button>
+        </div>
       </div>
     </header>
   )
@@ -330,9 +316,9 @@ function MobileDrawer({
 
   useEffect(() => {
     if (isOpen) {
-      prevFocusedRef.current = document.activeElement as HTMLElement
+      prevFocusedRef.current = (document.activeElement as HTMLElement)
       const focusable = drawerRef.current?.querySelectorAll<HTMLElement>(
-        "button:not([disabled])"
+        "button:not([disabled])",
       )
       focusable?.[0]?.focus()
 
@@ -368,7 +354,11 @@ function MobileDrawer({
 
   return (
     <div className="mobile-drawer-layer">
-      <div className="mobile-drawer-backdrop" onClick={onClose} aria-hidden="true" />
+      <div
+        className="mobile-drawer-backdrop"
+        onClick={onClose}
+        aria-hidden="true"
+      />
       <aside
         aria-label="Mobile navigation drawer"
         aria-modal="true"
@@ -407,7 +397,9 @@ function MobileDrawer({
               >
                 <Icon name={item.icon} size={18} />
                 <span>{item.label}</span>
-                {!isEnabled && <small className="coming-next-badge">Coming next</small>}
+                {!isEnabled && (
+                  <small className="coming-next-badge">Coming next</small>
+                )}
               </Button>
             )
           })}
@@ -470,11 +462,13 @@ function SlidingSelector<T extends string>({
 function Comparison({
   change,
   neutral,
+  priorPeriod,
 }: {
   change?: number
   neutral?: boolean
+  priorPeriod?: Period
 }) {
-  if (change === undefined) {
+  if (change === undefined || !priorPeriod) {
     return (
       <div className="comparison muted">
         <Icon name="minus" size={13} />
@@ -492,7 +486,7 @@ function Comparison({
       <Icon name={positive ? "arrowUp" : "arrowDown"} size={13} />
       <span>
         {positive ? "+" : "−"}
-        {Math.abs(change).toFixed(1)}% vs FY2023
+        {Math.abs(change).toFixed(1)}% vs {priorPeriod}
       </span>
     </div>
   )
@@ -503,7 +497,7 @@ function AnimatedNumber({ value }: { value: number }) {
 
   useEffect(() => {
     const reducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
+      "(prefers-reduced-motion: reduce)",
     ).matches
     if (reducedMotion) {
       setDisplayValue(value)
@@ -537,7 +531,7 @@ function AnimatedNumber({ value }: { value: number }) {
       aria-label={value.toLocaleString("en-US", {
         maximumFractionDigits: 2,
       })}
-      className="animated-number"
+      className="animated-number tabular-nums"
     >
       {displayValue.toLocaleString("en-US", {
         minimumFractionDigits: hasDecimals ? 2 : 0,
@@ -553,43 +547,57 @@ function FinancialSnapshot({
   period,
   current,
   hasComparison,
+  priorPeriod,
   comparison,
 }: {
   period: Period
   current: typeof financialData.FY2024
   hasComparison: boolean
+  priorPeriod?: Period
   comparison: (value: number, prior: number) => number
 }) {
-  const previous = financialData.FY2023
+  const previous = priorPeriod ? financialData[priorPeriod] : undefined
 
   const tiles = [
     {
       label: "Revenue",
       value: current.revenue,
-      change: hasComparison ? comparison(current.revenue, previous.revenue) : undefined,
+      change:
+        hasComparison && previous
+          ? comparison(current.revenue, previous.revenue)
+          : undefined,
       neutral: false,
-      color: "tile-lavender",
+      color: "tile-revenue",
     },
     {
       label: "Net income",
       value: current.income,
-      change: hasComparison ? comparison(current.income, previous.income) : undefined,
+      change:
+        hasComparison && previous
+          ? comparison(current.income, previous.income)
+          : undefined,
       neutral: false,
-      color: "tile-blue",
+      color: "tile-profit",
     },
     {
       label: "Total assets",
       value: current.assets,
-      change: hasComparison ? comparison(current.assets, previous.assets) : undefined,
+      change:
+        hasComparison && previous
+          ? comparison(current.assets, previous.assets)
+          : undefined,
       neutral: true,
-      color: "tile-peach",
+      color: "tile-assets",
     },
     {
       label: "Operating cash flow",
       value: current.cashFlow,
-      change: hasComparison ? comparison(current.cashFlow, previous.cashFlow) : undefined,
+      change:
+        hasComparison && previous
+          ? comparison(current.cashFlow, previous.cashFlow)
+          : undefined,
       neutral: false,
-      color: "tile-neutral",
+      color: "tile-cashflow",
     },
   ]
 
@@ -600,21 +608,28 @@ function FinancialSnapshot({
         <p>{period}</p>
       </div>
       {tiles.map((tile, i) => (
-        <div className={`metric-tile ${tile.color} entrance entrance-${i + 1}`} key={tile.label}>
+        <div
+          className={`metric-tile ${tile.color} entrance entrance-${i + 1}`}
+          key={tile.label}
+        >
           <div className="tile-label">{tile.label}</div>
-          <div className="tile-value">
+          <div className="tile-value tabular-nums">
             <span className="tile-currency">$</span>
             <AnimatedNumber value={tile.value} />
             <span className="tile-unit">M</span>
           </div>
-          <Comparison change={tile.change} neutral={tile.neutral} />
+          <Comparison
+            change={tile.change}
+            neutral={tile.neutral}
+            priorPeriod={priorPeriod}
+          />
         </div>
       ))}
     </div>
   )
 }
 
-/* ─── Performance Chart (Newest Year FY2024 on LEFT) ────────────────────────── */
+/* ─── Performance Chart (Year comparison or 5-Year Trend) ────────────────────── */
 
 type ChartTooltip = {
   left: number
@@ -623,30 +638,82 @@ type ChartTooltip = {
   value: string
 } | null
 
+type ChartMode = "comparison" | "trend"
+
 function PerformanceChart({
   metric,
   onMetric,
+  period,
 }: {
   metric: Metric
   onMetric: (metric: Metric) => void
+  period: Period
 }) {
   const [tooltip, setTooltip] = useState<ChartTooltip>(null)
+  const [chartMode, setChartMode] = useState<ChartMode>("comparison")
 
-  // Explicit ordering: FY2024 on the LEFT, FY2023 on the RIGHT
-  const values = [
-    { year: "FY2024" as const, value: financialData.FY2024[metric], isCurrent: true },
-    { year: "FY2023" as const, value: financialData.FY2023[metric], isCurrent: false },
-  ]
+  const current = financialData[period]
+  const priorPeriod = getPriorPeriod(period)
+  const prior = priorPeriod ? financialData[priorPeriod] : undefined
+
+  let chartBars: {
+    year: Period
+    value: number
+    isCurrent: boolean
+    label: string
+  }[] = []
+
+  if (chartMode === "comparison") {
+    // Selected year on LEFT, preceding year on RIGHT
+    if (priorPeriod && prior) {
+      chartBars = [
+        {
+          year: period,
+          value: current[metric],
+          isCurrent: true,
+          label: `${period} (Selected)`,
+        },
+        {
+          year: priorPeriod,
+          value: prior[metric],
+          isCurrent: false,
+          label: `${priorPeriod} (Prior year)`,
+        },
+      ]
+    } else {
+      chartBars = [
+        {
+          year: period,
+          value: current[metric],
+          isCurrent: true,
+          label: `${period} (Selected)`,
+        },
+      ]
+    }
+  } else {
+    // 5-Year Trend: Chronological order FY2020 through FY2024
+    chartBars = PERIODS_CHRONOLOGICAL.map((p) => ({
+      year: p,
+      value: financialData[p][metric],
+      isCurrent: p === period,
+      label: p === period ? `${p} (Selected)` : p,
+    }))
+  }
+
   const selectedLabel =
     metricOptions.find((item) => item.key === metric)?.label ?? ""
   const chartMax =
-    Math.ceil(Math.max(...values.map((item) => item.value)) / 100) * 100 || 100
+    Math.ceil(Math.max(...chartBars.map((item) => item.value)) / 100) * 100 ||
+    100
   const baseline = 156
   const chartHeight = 112
-  const xPositions = [190, 390]
   const ticks = [0, chartMax / 2, chartMax]
 
-  const showTooltip = (item: (typeof values)[number], x: number, y: number) => {
+  const showTooltip = (
+    item: typeof chartBars[number],
+    x: number,
+    y: number,
+  ) => {
     setTooltip({
       left: (x / 560) * 100,
       top: (y / 190) * 100,
@@ -655,24 +722,216 @@ function PerformanceChart({
     })
   }
 
+  const renderChartBars = () => {
+    if (chartMode === "comparison") {
+      if (chartBars.length === 2) {
+        const xPositions = [190, 390]
+        return chartBars.map((item, index) => {
+          const x = xPositions[index]
+          const height = (item.value / chartMax) * chartHeight
+          const y = baseline - height
+          const barClass = item.isCurrent ? "bar-current" : "bar-prior"
+          return (
+            <g
+              className={`chart-series series-${
+                item.isCurrent ? "current" : "prior"
+              }`}
+              key={`${metric}-${item.year}`}
+            >
+              <rect
+                aria-label={`${item.year} ${selectedLabel}: ${item.value} million dollars`}
+                className={`performance-bar ${barClass}`}
+                height={height}
+                onBlur={() => setTooltip(null)}
+                onFocus={() => showTooltip(item, x, y)}
+                onMouseEnter={() => showTooltip(item, x, y)}
+                onMouseLeave={() => setTooltip(null)}
+                rx="12"
+                tabIndex={0}
+                width="82"
+                x={x - 41}
+                y={y}
+              />
+              <text
+                className="bar-value tabular-nums"
+                textAnchor="middle"
+                x={x}
+                y={y - 8}
+              >
+                $
+                {item.value.toLocaleString("en-US", {
+                  maximumFractionDigits: 2,
+                })}
+                M
+              </text>
+              <text className="year-text" textAnchor="middle" x={x} y={180}>
+                {item.year}
+              </text>
+            </g>
+          )
+        })
+      }
+
+      // FY2020 single bar on left, unavailable placeholder on right
+      const item = chartBars[0]
+      const x = 190
+      const height = (item.value / chartMax) * chartHeight
+      const y = baseline - height
+      return (
+        <>
+          <g
+            className="chart-series series-current"
+            key={`${metric}-${item.year}`}
+          >
+            <rect
+              aria-label={`${item.year} ${selectedLabel}: ${item.value} million dollars`}
+              className="performance-bar bar-current"
+              height={height}
+              onBlur={() => setTooltip(null)}
+              onFocus={() => showTooltip(item, x, y)}
+              onMouseEnter={() => showTooltip(item, x, y)}
+              onMouseLeave={() => setTooltip(null)}
+              rx="12"
+              tabIndex={0}
+              width="82"
+              x={x - 41}
+              y={y}
+            />
+            <text
+              className="bar-value tabular-nums"
+              textAnchor="middle"
+              x={x}
+              y={y - 8}
+            >
+              $
+              {item.value.toLocaleString("en-US", { maximumFractionDigits: 2 })}
+              M
+            </text>
+            <text className="year-text" textAnchor="middle" x={x} y={180}>
+              {item.year}
+            </text>
+          </g>
+          <g
+            className="chart-series series-prior-unavailable"
+            key="unavailable-prior"
+          >
+            <rect
+              className="unavailable-bar-placeholder"
+              height="85"
+              rx="12"
+              strokeDasharray="4 4"
+              width="82"
+              x="349"
+              y="71"
+            />
+            <text className="axis-text" textAnchor="middle" x="390" y="112">
+              Prior year (FY2019)
+            </text>
+            <text
+              className="axis-text muted"
+              textAnchor="middle"
+              x="390"
+              y="128"
+            >
+              Data unavailable
+            </text>
+            <text
+              className="year-text muted"
+              textAnchor="middle"
+              x="390"
+              y="180"
+            >
+              FY2019
+            </text>
+          </g>
+        </>
+      )
+    }
+
+    // 5-Year Trend
+    const xPositions = [110, 200, 290, 380, 470]
+    return chartBars.map((item, index) => {
+      const x = xPositions[index]
+      const height = (item.value / chartMax) * chartHeight
+      const y = baseline - height
+      const barClass = item.isCurrent ? "bar-current" : "bar-prior"
+      return (
+        <g
+          className={`chart-series series-${
+            item.isCurrent ? "current" : "prior"
+          }`}
+          key={`${metric}-${item.year}`}
+        >
+          <rect
+            aria-label={`${item.year} ${selectedLabel}: ${item.value} million dollars`}
+            className={`performance-bar ${barClass}`}
+            height={height}
+            onBlur={() => setTooltip(null)}
+            onFocus={() => showTooltip(item, x, y)}
+            onMouseEnter={() => showTooltip(item, x, y)}
+            onMouseLeave={() => setTooltip(null)}
+            rx="8"
+            tabIndex={0}
+            width="54"
+            x={x - 27}
+            y={y}
+          />
+          <text
+            className="bar-value tabular-nums"
+            textAnchor="middle"
+            x={x}
+            y={y - 8}
+          >
+            ${item.value.toLocaleString("en-US", { maximumFractionDigits: 2 })}M
+          </text>
+          <text className="year-text" textAnchor="middle" x={x} y={180}>
+            {item.year}
+          </text>
+        </g>
+      )
+    })
+  }
+
   return (
     <div className="perf-panel surface">
       <div className="panel-header">
         <div>
           <h2>Financial performance</h2>
-          <p>USD millions · zero baseline</p>
+          <p>
+            {chartMode === "comparison"
+              ? `Year comparison: ${period} on LEFT${
+                  priorPeriod
+                    ? `, ${priorPeriod} on RIGHT`
+                    : " (baseline observation)"
+                }`
+              : "5-year trend (FY2020–FY2024): Chronological order · Zero baseline"}
+          </p>
         </div>
-        <SlidingSelector
-          ariaLabel="Performance metric"
-          className="metric-selector"
-          onChange={onMetric}
-          options={metricOptions}
-          value={metric}
-        />
+        <div className="chart-header-actions">
+          <SlidingSelector
+            ariaLabel="Chart view mode"
+            className="chart-mode-selector floating-pill-selector"
+            onChange={setChartMode}
+            options={[
+              { key: "comparison", label: "Year comparison" },
+              { key: "trend", label: "5-year trend" },
+            ]}
+            value={chartMode}
+          />
+          <SlidingSelector
+            ariaLabel="Performance metric"
+            className="metric-selector floating-pill-selector"
+            onChange={onMetric}
+            options={metricOptions}
+            value={metric}
+          />
+        </div>
       </div>
-      <div className="performance-chart">
+      <div className="performance-chart" data-metric={metric}>
         <svg
-          aria-label={`${selectedLabel}: FY2024 ${values[0].value} million dollars and FY2023 ${values[1].value} million dollars`}
+          aria-label={`${selectedLabel} chart (${
+            chartMode === "comparison" ? "Year comparison" : "5-year trend"
+          }): ${chartBars.map((b) => `${b.year} $${b.value}M`).join(", ")}`}
           className="chart-svg"
           role="img"
           viewBox="0 0 560 190"
@@ -682,49 +941,19 @@ function PerformanceChart({
             return (
               <g key={tick}>
                 <line className="grid-line" x1="62" x2="520" y1={y} y2={y} />
-                <text className="axis-text" textAnchor="end" x="50" y={y + 4}>
-                  {tick}
+                <text
+                  className="axis-text tabular-nums"
+                  textAnchor="end"
+                  x="50"
+                  y={y + 4}
+                >
+                  ${tick}M
                 </text>
               </g>
             )
           })}
-          {values.map((item, index) => {
-            const height = (item.value / chartMax) * chartHeight
-            const x = xPositions[index]
-            const y = baseline - height
-            const barClass = item.isCurrent ? "bar-current" : "bar-prior"
-            return (
-              <g
-                className={`chart-series series-${item.isCurrent ? "current" : "prior"}`}
-                key={`${metric}-${item.year}`}
-              >
-                <rect
-                  aria-label={`${item.year} ${selectedLabel}: ${item.value} million dollars`}
-                  className={`performance-bar ${barClass}`}
-                  height={height}
-                  onBlur={() => setTooltip(null)}
-                  onFocus={() => showTooltip(item, x, y)}
-                  onMouseEnter={() => showTooltip(item, x, y)}
-                  onMouseLeave={() => setTooltip(null)}
-                  rx="12"
-                  tabIndex={0}
-                  width="82"
-                  x={x - 41}
-                  y={y}
-                />
-                <text className="bar-value" textAnchor="middle" x={x} y={y - 8}>
-                  $
-                  {item.value.toLocaleString("en-US", {
-                    maximumFractionDigits: 2,
-                  })}
-                  M
-                </text>
-                <text className="year-text" textAnchor="middle" x={x} y={180}>
-                  {item.year}
-                </text>
-              </g>
-            )
-          })}
+
+          {renderChartBars()}
         </svg>
         {tooltip && (
           <div
@@ -745,40 +974,81 @@ function PerformanceChart({
 
 function FinancialIndicators({ period }: { period: Period }) {
   const current = financialData[period]
+  const priorPeriod = getPriorPeriod(period)
+  const prior = priorPeriod ? financialData[priorPeriod] : undefined
+
   const currentRatio = current.currentAssets / current.currentLiabilities
-  const isCurrent = period === "FY2024"
+  const debtToEquity = current.interestBearingDebt / current.equity
+  const marginDiff = prior ? current.margin - prior.margin : undefined
+  const revGrowth = prior
+    ? ((current.revenue - prior.revenue) / prior.revenue) * 100
+    : undefined
 
   return (
     <div className="indicators-panel surface">
       <h2>Financial indicators</h2>
       <div className="indicator-row">
         <span className="indicator-label">Net profit margin</span>
-        <span className={`indicator-value ${isCurrent ? "negative" : ""}`}>
+        <span
+          className={`indicator-value tabular-nums ${
+            marginDiff !== undefined && marginDiff < 0 ? "negative" : ""
+          }`}
+        >
           {current.margin.toFixed(1)}%
         </span>
-        {isCurrent && (
-          <span className="indicator-note">vs 10.0% prior year</span>
-        )}
-      </div>
-      <div className="indicator-row">
-        <span className="indicator-label">Current ratio</span>
-        <span className="indicator-value">{currentRatio.toFixed(2)}×</span>
-      </div>
-      <div className="indicator-row">
-        <span className="indicator-label">Revenue growth</span>
-        {isCurrent ? (
-          <span className="indicator-value positive">+7.5%</span>
+        {prior ? (
+          <span className="indicator-note">
+            vs {prior.margin.toFixed(1)}% in {priorPeriod} (
+            {marginDiff !== undefined && marginDiff >= 0 ? "+" : "−"}
+            {marginDiff !== undefined ? Math.abs(marginDiff).toFixed(1) : "0.0"}{" "}
+            pp)
+          </span>
         ) : (
-          <span className="indicator-value muted">—</span>
-        )}
-        {!isCurrent && (
           <span className="indicator-note">Prior year unavailable</span>
         )}
       </div>
       <div className="indicator-row">
-        <span className="indicator-label">Leverage</span>
-        <span className="indicator-value muted">Unavailable</span>
-        <span className="indicator-note">Debt data not supplied</span>
+        <span className="indicator-label">Current ratio</span>
+        <span className="indicator-value tabular-nums">
+          {currentRatio.toFixed(2)}×
+        </span>
+        {prior ? (
+          <span className="indicator-note">
+            vs {(prior.currentAssets / prior.currentLiabilities).toFixed(2)}× in{" "}
+            {priorPeriod}
+          </span>
+        ) : (
+          <span className="indicator-note">Prior year unavailable</span>
+        )}
+      </div>
+      <div className="indicator-row">
+        <span className="indicator-label">Revenue growth</span>
+        {revGrowth !== undefined ? (
+          <span
+            className={`indicator-value tabular-nums ${
+              revGrowth >= 0 ? "positive" : "negative"
+            }`}
+          >
+            {revGrowth >= 0 ? "+" : ""}
+            {revGrowth.toFixed(1)}%
+          </span>
+        ) : (
+          <span className="indicator-value muted">—</span>
+        )}
+        {prior ? (
+          <span className="indicator-note">vs {priorPeriod}</span>
+        ) : (
+          <span className="indicator-note">Prior year unavailable</span>
+        )}
+      </div>
+      <div className="indicator-row">
+        <span className="indicator-label">Debt-to-equity</span>
+        <span className="indicator-value tabular-nums">
+          {debtToEquity.toFixed(2)}×
+        </span>
+        <span className="indicator-note">
+          ${current.interestBearingDebt}M debt / ${current.equity}M equity
+        </span>
       </div>
     </div>
   )
@@ -842,7 +1112,7 @@ function SettingsPanel({
     const panel = panelRef.current
     if (!panel) return
     const focusable = panel.querySelectorAll<HTMLElement>(
-      "button:not([disabled])"
+      "button:not([disabled])",
     )
     focusable[0]?.focus()
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1096,8 +1366,10 @@ export default function App() {
       }
       setDocuments((prev) =>
         prev.map((doc) =>
-          doc.id === activeSimId ? { ...doc, status: "idle", progress: 0 } : doc
-        )
+          doc.id === activeSimId
+            ? { ...doc, status: "idle", progress: 0 }
+            : doc,
+        ),
       )
       setActiveSimId(null)
     }
@@ -1128,7 +1400,7 @@ export default function App() {
       (d) =>
         d.file.name === file.name &&
         d.file.size === file.size &&
-        d.file.lastModified === file.lastModified
+        d.file.lastModified === file.lastModified,
     )
     if (isDuplicate) {
       return { ok: false, error: "This file is already in your list." }
@@ -1163,7 +1435,9 @@ export default function App() {
     if (activeSimId) return // Allow only one simulation at a time
     setActiveSimId(id)
     setDocuments((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, status: "simulating", progress: 0 } : d))
+      prev.map((d) =>
+        d.id === id ? { ...d, status: "simulating", progress: 0 } : d,
+      ),
     )
 
     const STEPS = 12
@@ -1174,7 +1448,7 @@ export default function App() {
       step++
       const pct = Math.round((step / STEPS) * 100)
       setDocuments((prev) =>
-        prev.map((d) => (d.id === id ? { ...d, progress: pct } : d))
+        prev.map((d) => (d.id === id ? { ...d, progress: pct } : d)),
       )
       if (step >= STEPS) {
         if (simIntervalRef.current) {
@@ -1184,8 +1458,8 @@ export default function App() {
         setActiveSimId(null)
         setDocuments((prev) =>
           prev.map((d) =>
-            d.id === id ? { ...d, status: "done", progress: 100 } : d
-          )
+            d.id === id ? { ...d, status: "done", progress: 100 } : d,
+          ),
         )
       }
     }, INTERVAL)
@@ -1200,17 +1474,18 @@ export default function App() {
       setActiveSimId(null)
       setDocuments((prev) =>
         prev.map((d) =>
-          d.id === id ? { ...d, status: "idle", progress: 0 } : d
-        )
+          d.id === id ? { ...d, status: "idle", progress: 0 } : d,
+        ),
       )
     }
   }
 
   const current = financialData[period]
-  const previous = financialData.FY2023
+  const priorPeriod = getPriorPeriod(period)
+  const previous = priorPeriod ? financialData[priorPeriod] : undefined
   const comparison = (value: number, prior: number) =>
     ((value - prior) / prior) * 100
-  const hasComparison = period === "FY2024"
+  const hasComparison = Boolean(previous)
 
   return (
     <div
@@ -1263,6 +1538,18 @@ export default function App() {
               onRemoveDocument={handleRemoveDocument}
               onStartSim={handleStartSim}
             />
+          ) : activePage === "analysis" ? (
+            <AnalysisPage
+              onNavigate={setActivePage}
+              onPeriodChange={setPeriod}
+              selectedPeriod={period}
+            />
+          ) : activePage === "risks" ? (
+            <RisksPage
+              onNavigate={setActivePage}
+              onPeriodChange={setPeriod}
+              selectedPeriod={period}
+            />
           ) : (
             <>
               <div className="page-heading-row entrance entrance-1">
@@ -1273,19 +1560,19 @@ export default function App() {
                 <div className="heading-controls">
                   <SlidingSelector
                     ariaLabel="Reporting period"
-                    className="period-selector"
+                    className="period-selector floating-pill-selector"
                     onChange={setPeriod}
-                    options={[
-                      { key: "FY2024", label: "FY2024" },
-                      { key: "FY2023", label: "FY2023" },
-                    ]}
+                    options={PERIODS_NEWEST_FIRST.map((p) => ({
+                      key: p,
+                      label: p,
+                    }))}
                     value={period}
                   />
                   <span className="sample-badge">Sample data</span>
                 </div>
               </div>
               <p className="sample-notice entrance entrance-1">
-                Fictional sample data. No document has been analyzed.
+                {SAMPLE_NOTICE}
               </p>
 
               <div className="dashboard-grid entrance entrance-2">
@@ -1295,10 +1582,15 @@ export default function App() {
                     current={current}
                     hasComparison={hasComparison}
                     period={period}
+                    priorPeriod={priorPeriod}
                   />
                 </aside>
                 <div className="charts-col">
-                  <PerformanceChart metric={metric} onMetric={setMetric} />
+                  <PerformanceChart
+                    metric={metric}
+                    onMetric={setMetric}
+                    period={period}
+                  />
                   <div className="lower-row entrance entrance-3">
                     <FinancialIndicators period={period} />
                     <SampleDocuments onNavigate={setActivePage} />

@@ -37,7 +37,14 @@ export interface LocalDocument {
 
 function UploadIcon() {
   return (
-    <svg aria-hidden="true" className="icon" fill="none" height={28} viewBox="0 0 24 24" width={28}>
+    <svg
+      aria-hidden="true"
+      className="icon"
+      fill="none"
+      height={28}
+      viewBox="0 0 24 24"
+      width={28}
+    >
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <path d="m17 8-5-5-5 5M12 3v12" />
     </svg>
@@ -46,7 +53,14 @@ function UploadIcon() {
 
 function DocFileIcon() {
   return (
-    <svg aria-hidden="true" className="icon" fill="none" height={20} viewBox="0 0 24 24" width={20}>
+    <svg
+      aria-hidden="true"
+      className="icon"
+      fill="none"
+      height={20}
+      viewBox="0 0 24 24"
+      width={20}
+    >
       <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z" />
       <path d="M14 3v6h6M8 13h8M8 17h5" />
     </svg>
@@ -55,7 +69,14 @@ function DocFileIcon() {
 
 function CloseIcon() {
   return (
-    <svg aria-hidden="true" className="icon" fill="none" height={14} viewBox="0 0 24 24" width={14}>
+    <svg
+      aria-hidden="true"
+      className="icon"
+      fill="none"
+      height={14}
+      viewBox="0 0 24 24"
+      width={14}
+    >
       <path d="m6 6 12 12M18 6 6 18" />
     </svg>
   )
@@ -63,7 +84,14 @@ function CloseIcon() {
 
 function ArrowLeftIcon() {
   return (
-    <svg aria-hidden="true" className="icon" fill="none" height={15} viewBox="0 0 24 24" width={15}>
+    <svg
+      aria-hidden="true"
+      className="icon"
+      fill="none"
+      height={15}
+      viewBox="0 0 24 24"
+      width={15}
+    >
       <path d="m15 18-6-6 6-6" />
     </svg>
   )
@@ -109,7 +137,7 @@ export default function DocumentsPage({
 
       if (file.size > MAX_SIZE_BYTES) {
         setError(
-          `That file is too large (${formatBytes(file.size)}). The maximum is ${MAX_SIZE_LABEL}.`
+          `That file is too large (${formatBytes(file.size)}). The maximum is ${MAX_SIZE_LABEL}.`,
         )
         return
       }
@@ -120,9 +148,11 @@ export default function DocumentsPage({
         return
       }
 
-      setAnnouncement(`File added to your documents: ${file.name}, ${formatBytes(file.size)}.`)
+      setAnnouncement(
+        `File added to your documents: ${file.name}, ${formatBytes(file.size)}.`,
+      )
     },
-    [onAddDocument]
+    [onAddDocument],
   )
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -157,7 +187,12 @@ export default function DocumentsPage({
 
   return (
     <div className="docs-page">
-      <div aria-live="polite" aria-atomic="true" className="sr-only" role="status">
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        role="status"
+      >
         {announcement}
       </div>
 
@@ -179,7 +214,9 @@ export default function DocumentsPage({
       {/* File selection dropzone */}
       <section
         aria-label="PDF selection area"
-        className={`surface docs-dropzone entrance entrance-2 ${dragging ? "docs-dropzone-active" : ""}`}
+        className={`surface docs-dropzone entrance entrance-2 ${
+          dragging ? "docs-dropzone-active" : ""
+        }`}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
@@ -207,7 +244,8 @@ export default function DocumentsPage({
             Choose PDF
           </button>
           <p className="docs-drop-hint">
-            Single PDF · max {MAX_SIZE_LABEL} · preliminary browser validation only.
+            Single PDF · max {MAX_SIZE_LABEL} · preliminary browser validation
+            only.
           </p>
         </div>
 
@@ -219,17 +257,22 @@ export default function DocumentsPage({
       </section>
 
       {/* Your documents list */}
-      <section aria-label="Your documents" className="surface docs-list-panel entrance entrance-3">
+      <section
+        aria-label="Your documents"
+        className="surface docs-list-panel entrance entrance-3"
+      >
         <div className="docs-list-header">
           <div>
             <h2>Your documents</h2>
             <p className="docs-memory-notice">
-              Files are stored in memory for this session only. They are not uploaded and will be cleared when you refresh.
+              Files are stored in memory for this session only. They are not
+              uploaded and will be cleared when you refresh.
             </p>
           </div>
           {documents.length > 0 && (
             <span className="docs-count-badge">
-              {documents.length} {documents.length === 1 ? "document" : "documents"}
+              {documents.length}{" "}
+              {documents.length === 1 ? "document" : "documents"}
             </span>
           )}
         </div>
@@ -238,7 +281,8 @@ export default function DocumentsPage({
           <div className="docs-empty-state">
             <p className="docs-empty-title">No documents in your list</p>
             <p className="docs-empty-sub">
-              Select or drop a PDF file above to add it to your memory-only session.
+              Select or drop a PDF file above to add it to your memory-only
+              session.
             </p>
           </div>
         ) : (
@@ -246,7 +290,8 @@ export default function DocumentsPage({
             {documents.map((doc) => {
               const isSimulating = doc.status === "simulating"
               const isDone = doc.status === "done"
-              const isAnotherSimRunning = activeSimId !== null && activeSimId !== doc.id
+              const isAnotherSimRunning =
+                activeSimId !== null && activeSimId !== doc.id
 
               return (
                 <article
@@ -272,13 +317,19 @@ export default function DocumentsPage({
 
                     <div className="docs-entry-status-tag">
                       {doc.status === "idle" && (
-                        <span className="status-badge status-idle">Selected locally</span>
+                        <span className="status-badge status-idle">
+                          Selected locally
+                        </span>
                       )}
                       {doc.status === "simulating" && (
-                        <span className="status-badge status-simulating">Simulating</span>
+                        <span className="status-badge status-simulating">
+                          Simulating
+                        </span>
                       )}
                       {doc.status === "done" && (
-                        <span className="status-badge status-done">Demo complete</span>
+                        <span className="status-badge status-done">
+                          Demo complete
+                        </span>
                       )}
                     </div>
 
@@ -289,7 +340,11 @@ export default function DocumentsPage({
                           className="button docs-action-btn docs-btn-simulate"
                           disabled={isAnotherSimRunning}
                           onClick={() => onStartSim(doc.id)}
-                          title={isAnotherSimRunning ? "Another simulation is currently in progress" : undefined}
+                          title={
+                            isAnotherSimRunning
+                              ? "Another simulation is currently in progress"
+                              : undefined
+                          }
                           type="button"
                         >
                           Simulate processing
@@ -322,7 +377,9 @@ export default function DocumentsPage({
                   {isSimulating && (
                     <div className="docs-entry-progress-wrap">
                       <div className="docs-progress-meta">
-                        <span className="docs-progress-label">Simulated progress</span>
+                        <span className="docs-progress-label">
+                          Simulated progress
+                        </span>
                         <span className="docs-progress-pct" aria-hidden="true">
                           {doc.progress}%
                         </span>
@@ -346,7 +403,8 @@ export default function DocumentsPage({
                   {/* Completion note */}
                   {isDone && (
                     <div className="docs-entry-completion-note" role="status">
-                      Demo complete — this file has not been uploaded or analyzed.
+                      Demo complete — this file has not been uploaded or
+                      analyzed.
                     </div>
                   )}
                 </article>
