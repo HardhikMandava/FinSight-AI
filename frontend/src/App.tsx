@@ -11,7 +11,7 @@ import AnalysisPage from "./components/AnalysisPage"
 import RisksPage from "./components/RisksPage"
 import AssistantPage from "./components/AssistantPage"
 import LandingPage from "./components/LandingPage"
-import { Brand, FinSightMark } from "./components/FinSightLogo"
+import LogoMark from "./components/LogoMark"
 import {
   type Period,
   PERIODS_NEWEST_FIRST,
@@ -24,49 +24,43 @@ import {
 type Metric = "revenue" | "income" | "cashFlow"
 type Appearance = "dark" | "light" | "system"
 type NavLayout = "sidebar" | "topbar"
-export type AppRoute = "/" | "overview" | "documents" | "analysis" | "risks" | "assistant"
-export type WorkspacePage = "overview" | "documents" | "analysis" | "risks" | "assistant"
-type IconName =
-  | "overview"
-  | "document"
-  | "analysis"
-  | "assistant"
-  | "risk"
-  | "settings"
-  | "menu"
-  | "close"
-  | "arrowUp"
-  | "arrowDown"
-  | "minus"
-  | "info"
-  | "sun"
-  | "moon"
-  | "system"
-  | "check"
-  | "externalLink"
-  | "globe"
+type ActivePage = "overview" | "documents" | "analysis" | "risks" | "assistant"
+type AppRoute = ActivePage | "landing"
+type IconName = "overview" | "document" | "analysis" | "assistant" | "risk" | "settings" | "menu" | "close" | "arrowUp" | "arrowDown" | "minus" | "info" | "sun" | "moon" | "system" | "check" | "externalLink"
 
-function parseHash(hash: string): AppRoute {
-  const clean = hash.replace(/^#\/?/, "").split("?")[0].trim().toLowerCase()
-  if (
-    clean === "overview" ||
-    clean === "documents" ||
-    clean === "analysis" ||
-    clean === "risks" ||
-    clean === "assistant"
-  ) {
-    return clean
-  }
-  return "/"
+interface MetricOption {
+  key: Metric
+  label: string
 }
 
-const metricOptions: { key: Metric; label: string }[] = [
+interface NavItem {
+  label: string
+  icon: IconName
+  page?: ActivePage
+}
+
+interface SelectorOption<T> {
+  key: T
+  label: string
+}
+
+interface AddDocumentResult {
+  ok: boolean
+  error?: string
+}
+
+interface IconProps {
+  name: IconName
+  size?: number
+}
+
+const metricOptions: MetricOption[] = [
   { key: "revenue", label: "Revenue" },
   { key: "income", label: "Net income" },
   { key: "cashFlow", label: "Cash flow" },
 ]
 
-const navItems: { label: string; icon: IconName; page: WorkspacePage }[] = [
+const navItems: NavItem[] = [
   { label: "Overview", icon: "overview", page: "overview" },
   { label: "Documents", icon: "document", page: "documents" },
   { label: "Analysis", icon: "analysis", page: "analysis" },
@@ -74,7 +68,7 @@ const navItems: { label: string; icon: IconName; page: WorkspacePage }[] = [
   { label: "Assistant", icon: "assistant", page: "assistant" },
 ]
 
-function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
+function Icon({ name, size = 18 }: IconProps) {
   const paths: Record<IconName, ReactNode> = {
     overview: (
       <>
@@ -142,13 +136,6 @@ function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
         <path d="M15 3h6v6M10 14 21 3" />
       </>
     ),
-    globe: (
-      <>
-        <circle cx="12" cy="12" r="10" />
-        <line x1="2" y1="12" x2="22" y2="12" />
-        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-      </>
-    ),
   }
 
   return (
@@ -181,44 +168,53 @@ const Button =
     },
   )
 
+function Brand({ mini = false }: { mini?: boolean }) {
+  return (
+    <div className={`brand ${mini ? "brand-mini" : ""}`} title="FinSight AI">
+      <LogoMark />
+      {!mini && <span>FinSight AI</span>}
+    </div>
+  )
+}
+
 /* ─── Desktop Layout 1: Floating Sidebar Rail ───────────────────────────────── */
 
 function Sidebar({
   activePage,
+  onLanding,
   onNavigate,
-  onNavigateHome,
   onSettings,
 }: {
-  activePage: WorkspacePage
-  onNavigate: (page: WorkspacePage) => void
-  onNavigateHome: () => void
+  activePage: ActivePage
+  onLanding: () => void
+  onNavigate: (page: ActivePage) => void
   onSettings: (trigger: HTMLButtonElement) => void
 }) {
   return (
     <aside aria-label="Sidebar navigation" className="sidebar-rail-wrap">
       <nav aria-label="Sidebar destinations" className="sidebar surface">
         <div className="sidebar-brand-wrap">
-          <button
-            aria-label="FinSight AI - Return to public site"
-            className="sidebar-brand-button button"
-            data-tooltip="Public site"
-            onClick={onNavigateHome}
-            type="button"
-          >
-            <FinSightMark size={28} />
-          </button>
+          <Brand mini />
         </div>
         <div className="sidebar-links">
           {navItems.map((item) => {
-            const isActive = item.page === activePage
+            const isActive = item.page !== undefined && item.page === activePage
+            const isEnabled = item.page !== undefined
             return (
               <Button
                 key={item.label}
                 aria-current={isActive ? "page" : undefined}
+                aria-disabled={!isEnabled}
                 aria-label={item.label}
-                className={`sidebar-button ${isActive ? "active" : ""}`}
+                className={`sidebar-button ${isActive ? "active" : ""} ${
+                  !isEnabled ? "unavailable" : ""
+                }`}
                 data-tooltip={item.label}
-                onClick={!isActive ? () => onNavigate(item.page) : undefined}
+                onClick={
+                  isEnabled && !isActive
+                    ? () => onNavigate(item.page!)
+                    : undefined
+                }
               >
                 <Icon name={item.icon} size={18} />
               </Button>
@@ -227,12 +223,12 @@ function Sidebar({
         </div>
         <div className="sidebar-bottom">
           <Button
-            aria-label="Public site"
-            className="sidebar-button sidebar-public-site"
+            aria-label="Return to public site"
+            className="sidebar-button"
             data-tooltip="Public site"
-            onClick={onNavigateHome}
+            onClick={onLanding}
           >
-            <Icon name="globe" size={18} />
+            <Icon name="externalLink" size={18} />
           </Button>
           <Button
             aria-label="Settings"
@@ -252,28 +248,41 @@ function Sidebar({
 
 function TopBarNav({
   activePage,
+  onLanding,
   onNavigate,
-  onNavigateHome,
   onSettings,
 }: {
-  activePage: WorkspacePage
-  onNavigate: (page: WorkspacePage) => void
-  onNavigateHome: () => void
+  activePage: ActivePage
+  onLanding: () => void
+  onNavigate: (page: ActivePage) => void
   onSettings: (trigger: HTMLButtonElement) => void
 }) {
   return (
     <header className="topbar-header-wrap" role="banner">
       <div className="topbar-floating-bar surface">
-        <Brand onClick={onNavigateHome} />
+        <Brand />
         <nav aria-label="Primary navigation" className="top-nav-capsule">
+          <span className="sr-only" id="coming-next-top">
+            Coming next. This destination is not available in the prototype.
+          </span>
           {navItems.map((item) => {
-            const isActive = item.page === activePage
+            const isActive = item.page !== undefined && item.page === activePage
+            const isEnabled = item.page !== undefined
             return (
               <Button
                 key={item.label}
                 aria-current={isActive ? "page" : undefined}
-                className={`top-nav-link ${isActive ? "active" : ""}`}
-                onClick={!isActive ? () => onNavigate(item.page) : undefined}
+                aria-describedby={!isEnabled ? "coming-next-top" : undefined}
+                aria-disabled={!isEnabled}
+                className={`top-nav-link ${isActive ? "active" : ""} ${
+                  !isEnabled ? "unavailable" : ""
+                }`}
+                data-tooltip={!isEnabled ? "Coming next" : undefined}
+                onClick={
+                  isEnabled && !isActive
+                    ? () => onNavigate(item.page!)
+                    : undefined
+                }
               >
                 {item.label}
               </Button>
@@ -281,11 +290,8 @@ function TopBarNav({
           })}
         </nav>
         <div className="topbar-right">
-          <Button
-            className="public-site-button"
-            onClick={onNavigateHome}
-          >
-            <Icon name="globe" size={14} />
+          <Button className="public-site-button" onClick={onLanding}>
+            <Icon name="externalLink" size={14} />
             <span>Public site</span>
           </Button>
           <Button
@@ -305,16 +311,14 @@ function TopBarNav({
 
 function MobileTopBar({
   onMenu,
-  onNavigateHome,
   onSettings,
 }: {
   onMenu: () => void
-  onNavigateHome: () => void
   onSettings: (trigger: HTMLButtonElement) => void
 }) {
   return (
     <header className="mobile-top-bar" role="banner">
-      <Brand onClick={onNavigateHome} />
+      <Brand />
       <div className="mobile-top-actions">
         <Button
           aria-label="Settings"
@@ -340,15 +344,15 @@ function MobileDrawer({
   activePage,
   isOpen,
   onClose,
+  onLanding,
   onNavigate,
-  onNavigateHome,
   onSettings,
 }: {
-  activePage: WorkspacePage
+  activePage: ActivePage
   isOpen: boolean
   onClose: () => void
-  onNavigate: (page: WorkspacePage) => void
-  onNavigateHome: () => void
+  onLanding: () => void
+  onNavigate: (page: ActivePage) => void
   onSettings: (trigger: HTMLButtonElement) => void
 }) {
   const drawerRef = useRef<HTMLElement>(null)
@@ -407,12 +411,7 @@ function MobileDrawer({
         role="dialog"
       >
         <div className="mobile-drawer-header">
-          <Brand
-            onClick={() => {
-              onNavigateHome()
-              onClose()
-            }}
-          />
+          <Brand />
           <Button
             aria-label="Close menu"
             className="close-button"
@@ -423,34 +422,43 @@ function MobileDrawer({
         </div>
         <nav aria-label="Mobile destinations" className="mobile-drawer-nav">
           {navItems.map((item) => {
-            const isActive = item.page === activePage
+            const isActive = item.page !== undefined && item.page === activePage
+            const isEnabled = item.page !== undefined
             return (
               <Button
                 key={item.label}
                 aria-current={isActive ? "page" : undefined}
+                aria-disabled={!isEnabled}
                 className={`mobile-drawer-link ${isActive ? "active" : ""}`}
-                onClick={() => {
-                  if (!isActive) onNavigate(item.page)
-                  onClose()
-                }}
+                onClick={
+                  isEnabled
+                    ? () => {
+                        if (!isActive) onNavigate(item.page!)
+                        onClose()
+                      }
+                    : undefined
+                }
               >
                 <Icon name={item.icon} size={18} />
                 <span>{item.label}</span>
+                {!isEnabled && (
+                  <small className="coming-next-badge">Coming next</small>
+                )}
               </Button>
             )
           })}
+        </nav>
+        <div className="mobile-drawer-footer">
           <Button
-            className="mobile-drawer-link mobile-drawer-public"
+            className="mobile-drawer-link"
             onClick={() => {
-              onNavigateHome()
+              onLanding()
               onClose()
             }}
           >
-            <Icon name="globe" size={18} />
+            <Icon name="externalLink" size={18} />
             <span>Public site</span>
           </Button>
-        </nav>
-        <div className="mobile-drawer-footer">
           <Button
             className="mobile-drawer-link mobile-drawer-settings"
             onClick={(event) => {
@@ -479,7 +487,7 @@ function SlidingSelector<T extends string>({
   ariaLabel: string
   className: string
   onChange: (value: T) => void
-  options: { key: T; label: string }[]
+  options: SelectorOption<T>[]
   value: T
 }) {
   const activeIndex = options.findIndex((option) => option.key === value)
@@ -1188,8 +1196,18 @@ function SettingsPanel({
     icon: IconName
     detail: string
   }[] = [
-    { key: "light", label: "Light", icon: "sun", detail: "Lavender workspace" },
-    { key: "dark", label: "Dark", icon: "moon", detail: "Graphite workspace" },
+    {
+      key: "light",
+      label: "Light",
+      icon: "sun",
+      detail: "Warm ivory workspace",
+    },
+    {
+      key: "dark",
+      label: "Dark",
+      icon: "moon",
+      detail: "Warm charcoal workspace",
+    },
     {
       key: "system",
       label: "System",
@@ -1322,6 +1340,20 @@ const APPEARANCE_KEY = "finsight-appearance"
 const REDESIGN_KEY = "finsight-lavender-v2"
 const NAV_LAYOUT_KEY = "finsight-nav-layout"
 
+function getRouteFromHash(): AppRoute {
+  const route = window.location.hash.replace(/^#\/?/, "")
+  if (
+    route === "overview" ||
+    route === "documents" ||
+    route === "analysis" ||
+    route === "risks" ||
+    route === "assistant"
+  ) {
+    return route
+  }
+  return "landing"
+}
+
 function getInitialAppearance(): Appearance {
   try {
     if (!window.localStorage.getItem(REDESIGN_KEY)) {
@@ -1351,13 +1383,14 @@ function getInitialNavLayout(): NavLayout {
 /* ─── Main App Component ─────────────────────────────────────────────────────── */
 
 export default function App() {
-  const [route, setRoute] = useState<AppRoute>(() => parseHash(window.location.hash))
   const [period, setPeriod] = useState<Period>("FY2024")
   const [metric, setMetric] = useState<Metric>("revenue")
   const [appearance, setAppearance] = useState<Appearance>(getInitialAppearance)
   const [navLayout, setNavLayout] = useState<NavLayout>(getInitialNavLayout)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [route, setRoute] = useState<AppRoute>(getRouteFromHash)
+  const activePage: ActivePage = route === "landing" ? "overview" : route
   const settingsTriggerRef = useRef<HTMLButtonElement>(null)
 
   // Document list state kept in shared state above page
@@ -1365,26 +1398,14 @@ export default function App() {
   const [activeSimId, setActiveSimId] = useState<string | null>(null)
   const simIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Sync hash changes (Browser Back / Forward buttons)
   useEffect(() => {
-    const handleHashChange = () => {
-      setRoute(parseHash(window.location.hash))
+    const syncRoute = () => {
+      setRoute(getRouteFromHash())
+      window.scrollTo({ top: 0, behavior: "auto" })
     }
-    window.addEventListener("hashchange", handleHashChange)
-    return () => window.removeEventListener("hashchange", handleHashChange)
+    window.addEventListener("hashchange", syncRoute)
+    return () => window.removeEventListener("hashchange", syncRoute)
   }, [])
-
-  const navigate = (to: AppRoute) => {
-    const targetHash = to === "/" ? "#/" : `#/${to}`
-    if (window.location.hash !== targetHash) {
-      window.location.hash = targetHash
-    } else {
-      setRoute(to)
-    }
-  }
-
-  const activePage: WorkspacePage = route === "/" ? "overview" : route
-  const setActivePage = (page: WorkspacePage) => navigate(page)
 
   // Appearance theme listener
   useEffect(() => {
@@ -1426,7 +1447,7 @@ export default function App() {
 
   // When leaving Documents page, safely cancel active simulation and reset entry to "idle" ("Selected locally")
   useEffect(() => {
-    if (activePage !== "documents" && activeSimId) {
+    if (route !== "documents" && activeSimId) {
       if (simIntervalRef.current) {
         clearInterval(simIntervalRef.current)
         simIntervalRef.current = null
@@ -1440,7 +1461,17 @@ export default function App() {
       )
       setActiveSimId(null)
     }
-  }, [activePage, activeSimId])
+  }, [route, activeSimId])
+
+  const navigate = (destination: AppRoute) => {
+    const nextHash = destination === "landing" ? "#/" : `#/${destination}`
+    if (window.location.hash === nextHash) {
+      setRoute(destination)
+      window.scrollTo({ top: 0, behavior: "smooth" })
+      return
+    }
+    window.location.hash = nextHash
+  }
 
   const handleNavLayoutChange = (layout: NavLayout) => {
     setNavLayout(layout)
@@ -1462,7 +1493,7 @@ export default function App() {
   }
 
   // Document management handlers
-  const handleAddDocument = (file: File): { ok: boolean; error?: string } => {
+  const handleAddDocument = (file: File): AddDocumentResult => {
     const isDuplicate = documents.some(
       (d) =>
         d.file.name === file.name &&
@@ -1554,14 +1585,8 @@ export default function App() {
     ((value - prior) / prior) * 100
   const hasComparison = Boolean(previous)
 
-  if (route === "/") {
-    return (
-      <LandingPage
-        onExploreDemo={() => {
-          navigate("overview")
-        }}
-      />
-    )
+  if (route === "landing") {
+    return <LandingPage onExplore={() => navigate("overview")} />
   }
 
   return (
@@ -1574,8 +1599,8 @@ export default function App() {
       {navLayout === "sidebar" && (
         <Sidebar
           activePage={activePage}
-          onNavigate={setActivePage}
-          onNavigateHome={() => navigate("/")}
+          onLanding={() => navigate("landing")}
+          onNavigate={navigate}
           onSettings={openSettings}
         />
       )}
@@ -1585,8 +1610,8 @@ export default function App() {
         {navLayout === "topbar" && (
           <TopBarNav
             activePage={activePage}
-            onNavigate={setActivePage}
-            onNavigateHome={() => navigate("/")}
+            onLanding={() => navigate("landing")}
+            onNavigate={navigate}
             onSettings={openSettings}
           />
         )}
@@ -1594,7 +1619,6 @@ export default function App() {
         {/* Mobile Top Bar (Visible ONLY on mobile screens <= 880px) */}
         <MobileTopBar
           onMenu={() => setMenuOpen(true)}
-          onNavigateHome={() => navigate("/")}
           onSettings={openSettings}
         />
 
@@ -1603,8 +1627,8 @@ export default function App() {
           activePage={activePage}
           isOpen={menuOpen}
           onClose={() => setMenuOpen(false)}
-          onNavigate={setActivePage}
-          onNavigateHome={() => navigate("/")}
+          onLanding={() => navigate("landing")}
+          onNavigate={navigate}
           onSettings={openSettings}
         />
 
@@ -1614,25 +1638,25 @@ export default function App() {
               activeSimId={activeSimId}
               documents={documents}
               onAddDocument={handleAddDocument}
-              onBack={() => setActivePage("overview")}
+              onBack={() => navigate("overview")}
               onCancelSim={handleCancelSim}
               onRemoveDocument={handleRemoveDocument}
               onStartSim={handleStartSim}
             />
           ) : activePage === "analysis" ? (
             <AnalysisPage
-              onNavigate={setActivePage}
+              onNavigate={navigate}
               onPeriodChange={setPeriod}
               selectedPeriod={period}
             />
           ) : activePage === "risks" ? (
             <RisksPage
-              onNavigate={setActivePage}
+              onNavigate={navigate}
               onPeriodChange={setPeriod}
               selectedPeriod={period}
             />
           ) : activePage === "assistant" ? (
-            <AssistantPage onNavigate={setActivePage} />
+            <AssistantPage />
           ) : (
             <>
               <div className="page-heading-row entrance entrance-1">
@@ -1654,35 +1678,21 @@ export default function App() {
                   <span className="sample-badge">Sample data</span>
                 </div>
               </div>
-
-              {/* Quick Jump Navigation Pills */}
-              <div className="overview-quick-pills entrance entrance-2">
-                <span className="quick-pills-label">Quick access:</span>
-                <button
-                  className="button quick-pill-btn"
-                  onClick={() => setActivePage("analysis")}
-                  type="button"
-                >
-                  <Icon name="analysis" size={14} />
-                  <span>Financial analysis</span>
-                </button>
-                <button
-                  className="button quick-pill-btn"
-                  onClick={() => setActivePage("risks")}
-                  type="button"
-                >
-                  <Icon name="risk" size={14} />
-                  <span>Risk indicators</span>
-                </button>
-                <button
-                  className="button quick-pill-btn"
-                  onClick={() => setActivePage("documents")}
-                  type="button"
-                >
-                  <Icon name="document" size={14} />
-                  <span>Documents</span>
-                </button>
-              </div>
+              <nav
+                aria-label="Explore financial workspace"
+                className="overview-paths entrance entrance-1"
+              >
+                <span>Continue exploring</span>
+                <Button onClick={() => navigate("analysis")}>
+                  Financial analysis <Icon name="externalLink" size={13} />
+                </Button>
+                <Button onClick={() => navigate("risks")}>
+                  Risk indicators <Icon name="externalLink" size={13} />
+                </Button>
+                <Button onClick={() => navigate("documents")}>
+                  Documents <Icon name="externalLink" size={13} />
+                </Button>
+              </nav>
 
               <div className="dashboard-grid entrance entrance-2">
                 <aside className="snapshot-col">
@@ -1702,18 +1712,14 @@ export default function App() {
                   />
                   <div className="lower-row entrance entrance-3">
                     <FinancialIndicators period={period} />
-                    <SampleDocuments onNavigate={setActivePage} />
+                    <SampleDocuments onNavigate={navigate} />
                   </div>
                 </div>
               </div>
             </>
           )}
-
-          {/* Single Workspace Footer with exact sample disclosure */}
-          <footer className="workspace-footer">
-            <p className="sample-data-disclosure">{SAMPLE_NOTICE}</p>
-          </footer>
         </main>
+        <footer className="workspace-disclosure">{SAMPLE_NOTICE}</footer>
       </div>
 
       {settingsOpen && (

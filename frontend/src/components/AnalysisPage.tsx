@@ -16,7 +16,6 @@ import {
   calculateROA,
   calculateROE,
   calculateCashFlowGrowth,
-  calculateNetIncomeGrowth,
   calculateMarginChange,
   METHODOLOGY_DISCLOSURES,
   type CalculationResult,
@@ -27,7 +26,7 @@ type ChartMetric = "revenue" | "income" | "cashFlow"
 type ChartMode = "comparison" | "trend"
 
 interface AnalysisPageProps {
-  onNavigate: (page: "overview" | "documents" | "analysis" | "risks" | "assistant") => void
+  onNavigate: (page: "overview" | "documents" | "analysis" | "risks") => void
   selectedPeriod: Period
   onPeriodChange: (period: Period) => void
 }
@@ -150,10 +149,6 @@ export default function AnalysisPage({
   const cfGrowthResult = calculateCashFlowGrowth(
     current.cashFlow,
     prior?.cashFlow,
-  )
-  const niGrowthResult = calculateNetIncomeGrowth(
-    current.income,
-    prior?.income,
   )
 
   const metricLabels: Record<ChartMetric, string> = {
@@ -410,7 +405,8 @@ export default function AnalysisPage({
           </div>
           <h1>Financial Analysis</h1>
           <p className="currency-notice">
-            Executive financial workspace · Multi-year performance, ratios, and statement extracts
+            Executive financial workspace · Multi-year performance, ratios, and
+            statement extracts
           </p>
         </div>
         <div className="heading-controls">
@@ -585,75 +581,6 @@ export default function AnalysisPage({
             }
             suffix="×"
             trend="neutral"
-          />
-
-          {/* Net Income Growth - Profitability (Violet) */}
-          <RatioCard
-            category="profitability"
-            categoryLabel="Profitability"
-            formula="(Current NI − Prior NI) / Prior NI × 100"
-            label="Net income growth"
-            period={selectedPeriod}
-            result={niGrowthResult}
-            subtext={
-              prior
-                ? `Net income: $${current.income}M vs $${prior.income}M in ${priorPeriod}`
-                : "Baseline observation (FY2019 unavailable)"
-            }
-            suffix="%"
-            trend={
-              niGrowthResult.status === "available"
-                ? niGrowthResult.value >= 0
-                  ? "positive"
-                  : "negative"
-                : "neutral"
-            }
-          />
-
-          {/* Operating Cash Flow Growth - Growth / Cash Flow (Cyan) */}
-          <RatioCard
-            category="liquidity"
-            categoryLabel="Cash Flow"
-            formula="(Current CF − Prior CF) / Prior CF × 100"
-            label="Operating cash flow growth"
-            period={selectedPeriod}
-            result={cfGrowthResult}
-            subtext={
-              prior
-                ? `Cash flow: $${current.cashFlow}M vs $${prior.cashFlow}M in ${priorPeriod}`
-                : "Baseline observation (FY2019 unavailable)"
-            }
-            suffix="%"
-            trend={
-              cfGrowthResult.status === "available"
-                ? cfGrowthResult.value >= 0
-                  ? "positive"
-                  : "negative"
-                : "neutral"
-            }
-          />
-
-          {/* Margin Change - Profitability (Violet) */}
-          <RatioCard
-            category="profitability"
-            categoryLabel="Profitability"
-            formula="Current Net Margin − Prior Net Margin"
-            label="Margin change"
-            period={selectedPeriod}
-            result={marginChangeResult}
-            subtext={
-              prior
-                ? `${current.margin.toFixed(1)}% vs ${prior.margin.toFixed(1)}% in ${priorPeriod}`
-                : "Baseline observation (FY2019 unavailable)"
-            }
-            suffix=" pp"
-            trend={
-              marginChangeResult.status === "available"
-                ? marginChangeResult.value >= 0
-                  ? "positive"
-                  : "negative"
-                : "neutral"
-            }
           />
         </div>
 
@@ -1108,7 +1035,10 @@ export default function AnalysisPage({
           </div>
         </div>
 
-        <div className={`chart-card surface chart-metric-${chartMetric}`} data-metric={chartMetric}>
+        <div
+          className={`chart-card surface chart-metric-${chartMetric}`}
+          data-metric={chartMetric}
+        >
           <div className="chart-svg-wrap">
             <svg
               aria-label={`${selectedChartLabel} chart: ${chartBars.map((b) => `${b.year} $${b.value}M`).join(", ")}`}

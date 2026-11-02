@@ -12,12 +12,17 @@ import {
 } from "../utils/riskEvaluation"
 
 interface RisksPageProps {
-  onNavigate: (page: "overview" | "documents" | "analysis" | "risks" | "assistant") => void
+  onNavigate: (page: "overview" | "documents" | "analysis" | "risks") => void
   selectedPeriod: Period
   onPeriodChange: (period: Period) => void
 }
 
 type FilterOption = "all" | "triggered" | "not_triggered" | "not_assessable"
+
+interface StatusLabel {
+  label: string
+  className: string
+}
 
 function ArrowLeftIcon() {
   return (
@@ -294,7 +299,8 @@ export default function RisksPage({
           declining margins, negative cash flow, or debt expansion). In
           particular, increasing debt alone does not establish financial
           distress. These indicators do not constitute an official credit
-          rating, risk audit, or investment opinion.
+          rating, risk audit, or investment opinion. The project-defined
+          demonstration thresholds are not universal standards.
         </p>
         <div className="methodology-footer-action">
           <button
@@ -311,18 +317,17 @@ export default function RisksPage({
 }
 
 function RiskCard({ rule }: { rule: RiskRule }) {
-  const statusLabels: Record<RuleStatus, { label: string; className: string }> =
-    {
-      triggered: { label: "Triggered", className: "badge-triggered" },
-      not_triggered: {
-        label: "Not Triggered",
-        className: "badge-not-triggered",
-      },
-      not_assessable: {
-        label: "Not Assessable",
-        className: "badge-not-assessable",
-      },
-    }
+  const statusLabels: Record<RuleStatus, StatusLabel> = {
+    triggered: { label: "Triggered", className: "badge-triggered" },
+    not_triggered: {
+      label: "Not Triggered",
+      className: "badge-not-triggered",
+    },
+    not_assessable: {
+      label: "Not Assessable",
+      className: "badge-not-assessable",
+    },
+  }
 
   const { label, className } = statusLabels[rule.status]
 

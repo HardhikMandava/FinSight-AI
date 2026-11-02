@@ -6,8 +6,8 @@ import {
   type DragEvent,
 } from "react"
 
-const MAX_SIZE_BYTES = 20 * 1024 * 1024 // 20 MB
-const MAX_SIZE_LABEL = "20 MB"
+const MAX_SIZE_BYTES = 20 * 1024 * 1024 // 20 MiB
+const MAX_SIZE_LABEL = "20 MiB"
 
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -33,6 +33,11 @@ export interface LocalDocument {
   addedAt: Date
   status: DocStatus
   progress: number
+}
+
+interface AddDocumentResult {
+  ok: boolean
+  error?: string
 }
 
 function UploadIcon() {
@@ -108,7 +113,7 @@ export default function DocumentsPage({
 }: {
   documents: LocalDocument[]
   activeSimId: string | null
-  onAddDocument: (file: File) => { ok: boolean; error?: string }
+  onAddDocument: (file: File) => AddDocumentResult
   onRemoveDocument: (id: string) => void
   onStartSim: (id: string) => void
   onCancelSim: (id: string) => void
@@ -139,14 +144,6 @@ export default function DocumentsPage({
         setError(
           `That file is too large (${formatBytes(file.size)}). The maximum is ${MAX_SIZE_LABEL}.`,
         )
-        return
-      }
-
-      const isDuplicate = documents.some(
-        (d) => d.name.toLowerCase() === file.name.toLowerCase(),
-      )
-      if (isDuplicate) {
-        setError(`File "${file.name}" is already in your session documents list.`)
         return
       }
 
@@ -273,7 +270,8 @@ export default function DocumentsPage({
           <div>
             <h2>Your documents</h2>
             <p className="docs-memory-notice">
-              Files are held in memory for this session. They are not uploaded and are cleared when you refresh.
+              Files are held in memory for this session. They are not uploaded
+              and are cleared when you refresh.
             </p>
           </div>
           {documents.length > 0 && (
@@ -328,6 +326,18 @@ export default function DocumentsPage({
                           Selected locally
                         </span>
                       )}
+
+                      {isDone && (
+                        <button
+                          aria-disabled={isAnotherSimRunning}
+                          className="button docs-action-btn docs-btn-simulate"
+                          disabled={isAnotherSimRunning}
+                          onClick={() => onStartSim(doc.id)}
+                          type="button"
+                        >
+                          Retry simulation
+                        </button>
+                      )}
                       {doc.status === "simulating" && (
                         <span className="status-badge status-simulating">
                           Simulating
@@ -365,23 +375,6 @@ export default function DocumentsPage({
                           type="button"
                         >
                           Cancel
-                        </button>
-                      )}
-
-                      {doc.status === "done" && (
-                        <button
-                          aria-disabled={isAnotherSimRunning}
-                          className="button docs-action-btn docs-btn-simulate"
-                          disabled={isAnotherSimRunning}
-                          onClick={() => onStartSim(doc.id)}
-                          title={
-                            isAnotherSimRunning
-                              ? "Another simulation is currently in progress"
-                              : undefined
-                          }
-                          type="button"
-                        >
-                          Retry simulation
                         </button>
                       )}
 
