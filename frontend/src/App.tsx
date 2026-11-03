@@ -22,11 +22,23 @@ import {
 } from "./data/financialData"
 
 type Metric = "revenue" | "income" | "cashFlow"
-type Appearance = "dark" | "light" | "system"
-type NavLayout = "sidebar" | "topbar"
+export type Appearance = "dark" | "light" | "system"
+export type NavLayout = "sidebar" | "topbar"
+export type Density = "comfortable" | "compact"
+export type TextSize = "default" | "large"
 type ActivePage = "overview" | "documents" | "analysis" | "risks" | "assistant"
 type AppRoute = ActivePage | "landing"
 type IconName = "overview" | "document" | "analysis" | "assistant" | "risk" | "settings" | "menu" | "close" | "arrowUp" | "arrowDown" | "minus" | "info" | "sun" | "moon" | "system" | "check" | "externalLink"
+
+export interface UserPreferences {
+  appearance: Appearance
+  navLayout: NavLayout
+  density: Density
+  textSize: TextSize
+  reducedMotion: boolean
+  reducedTransparency: boolean
+  highContrast: boolean
+}
 
 interface MetricOption {
   key: Metric
@@ -546,19 +558,27 @@ function Comparison({
   )
 }
 
-function AnimatedNumber({ value }: { value: number }) {
-  const [displayValue, setDisplayValue] = useState(0)
+function AnimatedNumber({
+  value,
+  isReducedMotion = false,
+}: {
+  value: number
+  isReducedMotion?: boolean
+}) {
+  const [displayValue, setDisplayValue] = useState(value)
 
   useEffect(() => {
-    const reducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches
-    if (reducedMotion) {
+    const prefersReduced =
+      isReducedMotion ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      document.documentElement.getAttribute("data-motion") === "reduced"
+
+    if (prefersReduced) {
       setDisplayValue(value)
       return
     }
 
-    const duration = 620
+    const duration = 580
     let animationFrame = 0
     let startTime: number | null = null
 
@@ -577,7 +597,7 @@ function AnimatedNumber({ value }: { value: number }) {
     setDisplayValue(0)
     animationFrame = window.requestAnimationFrame(animate)
     return () => window.cancelAnimationFrame(animationFrame)
-  }, [value])
+  }, [value, isReducedMotion])
 
   const hasDecimals = !Number.isInteger(value)
   return (
@@ -603,12 +623,14 @@ function FinancialSnapshot({
   hasComparison,
   priorPeriod,
   comparison,
+  isReducedMotion = false,
 }: {
   period: Period
   current: typeof financialData.FY2024
   hasComparison: boolean
   priorPeriod?: Period
   comparison: (value: number, prior: number) => number
+  isReducedMotion?: boolean
 }) {
   const previous = priorPeriod ? financialData[priorPeriod] : undefined
 
@@ -669,7 +691,7 @@ function FinancialSnapshot({
           <div className="tile-label">{tile.label}</div>
           <div className="tile-value tabular-nums">
             <span className="tile-currency">$</span>
-            <AnimatedNumber value={tile.value} />
+            <AnimatedNumber isReducedMotion={isReducedMotion} value={tile.value} />
             <span className="tile-unit">M</span>
           </div>
           <Comparison
@@ -1145,28 +1167,36 @@ function SampleDocuments({
   )
 }
 
-/* ─── Settings Panel with Appearance and Layout Preferences ─────────────────── */
+/* ─── Settings Panel with Appearance, Accessibility, Data, and About ─────────── */
+
+type SettingsTab = "appearance" | "accessibility" | "data" | "about"
+
+interface SettingsPanelProps {
+  preferences: UserPreferences
+  deviceReducedMotion: boolean
+  onUpdatePreferences: (updates: Partial<UserPreferences>) => void
+  onResetPreferences: () => void
+  onNavigate: (route: ActivePage) => void
+  onClose: () => void
+}
 
 function SettingsPanel({
-  appearance,
-  navLayout,
-  onAppearance,
-  onNavLayout,
+  preferences,
+  deviceReducedMotion,
+  onUpdatePreferences,
+  onResetPreferences,
+  onNavigate,
   onClose,
-}: {
-  appearance: Appearance
-  navLayout: NavLayout
-  onAppearance: (appearance: Appearance) => void
-  onNavLayout: (layout: NavLayout) => void
-  onClose: () => void
-}) {
+}: SettingsPanelProps) {
+  const [activeTab, setActiveTab] = useState<SettingsTab>("appearance")
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
   const panelRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const panel = panelRef.current
     if (!panel) return
     const focusable = panel.querySelectorAll<HTMLElement>(
-      "button:not([disabled])",
+      "button:not([disabled]), [tabindex='0']",
     )
     focusable[0]?.focus()
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1188,7 +1218,7 @@ function SettingsPanel({
     }
     panel.addEventListener("keydown", handleKeyDown)
     return () => panel.removeEventListener("keydown", handleKeyDown)
-  }, [onClose])
+  }, [onClose, activeTab])
 
   const appearanceOptions: {
     key: Appearance
@@ -1212,7 +1242,7 @@ function SettingsPanel({
       key: "system",
       label: "System",
       icon: "system",
-      detail: "Match this device",
+      detail: "Match device preferences",
     },
   ]
 
@@ -1233,6 +1263,40 @@ function SettingsPanel({
       label: "Top bar",
       icon: "menu",
       detail: "Horizontal labeled navigation",
+    },
+  ]
+
+  const densityOptions: {
+    key: Density
+    label: string
+    detail: string
+  }[] = [
+    {
+      key: "comfortable",
+      label: "Comfortable",
+      detail: "Generous breathing room and spacing (default)",
+    },
+    {
+      key: "compact",
+      label: "Compact",
+      detail: "Denser tables, cards, and data views",
+    },
+  ]
+
+  const textSizeOptions: {
+    key: TextSize
+    label: string
+    detail: string
+  }[] = [
+    {
+      key: "default",
+      label: "Default",
+      detail: "Standard proportional typography (default)",
+    },
+    {
+      key: "large",
+      label: "Larger (+18%)",
+      detail: "Enhanced legibility across cards and tables",
     },
   ]
 
@@ -1260,75 +1324,375 @@ function SettingsPanel({
           </Button>
         </div>
 
-        {/* Appearance Preference */}
-        <div className="settings-section">
-          <h3>Appearance</h3>
-          <p>Choose the interface appearance for this browser.</p>
-          <div
-            aria-label="Appearance preference"
-            className="appearance-options"
-            role="radiogroup"
+        {/* Tab Navigation */}
+        <div className="settings-tabs-nav" role="tablist" aria-label="Settings categories">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "appearance"}
+            className={`settings-tab-btn ${activeTab === "appearance" ? "active" : ""}`}
+            onClick={() => setActiveTab("appearance")}
           >
-            {appearanceOptions.map((option) => (
-              <Button
-                aria-checked={appearance === option.key}
-                className={`appearance-option ${
-                  appearance === option.key ? "selected" : ""
-                }`}
-                key={option.key}
-                onClick={() => onAppearance(option.key)}
-                role="radio"
-              >
-                <span className="appearance-icon">
-                  <Icon name={option.icon} />
-                </span>
-                <span className="appearance-copy">
-                  <strong>{option.label}</strong>
-                  <small>{option.detail}</small>
-                </span>
-                <span className="radio-mark">
-                  {appearance === option.key && <Icon name="check" size={13} />}
-                </span>
-              </Button>
-            ))}
-          </div>
+            Appearance
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "accessibility"}
+            className={`settings-tab-btn ${activeTab === "accessibility" ? "active" : ""}`}
+            onClick={() => setActiveTab("accessibility")}
+          >
+            Accessibility
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "data"}
+            className={`settings-tab-btn ${activeTab === "data" ? "active" : ""}`}
+            onClick={() => setActiveTab("data")}
+          >
+            Data & Privacy
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "about"}
+            className={`settings-tab-btn ${activeTab === "about" ? "active" : ""}`}
+            onClick={() => setActiveTab("about")}
+          >
+            About
+          </button>
         </div>
 
-        {/* Layout Preference */}
-        <div className="settings-section">
-          <h3>Layout</h3>
-          <p>Choose desktop navigation position.</p>
-          <div
-            aria-label="Navigation position"
-            className="appearance-options"
-            role="radiogroup"
-          >
-            {layoutOptions.map((option) => (
-              <Button
-                aria-checked={navLayout === option.key}
-                className={`appearance-option ${
-                  navLayout === option.key ? "selected" : ""
-                }`}
-                key={option.key}
-                onClick={() => onNavLayout(option.key)}
-                role="radio"
+        {/* TAB 1: APPEARANCE */}
+        {activeTab === "appearance" && (
+          <div className="settings-tab-content">
+            {/* Theme */}
+            <div className="settings-section">
+              <h3>Theme</h3>
+              <p>Choose the interface theme for this browser.</p>
+              <div
+                aria-label="Theme preference"
+                className="appearance-options"
+                role="radiogroup"
               >
-                <span className="appearance-icon">
-                  <Icon name={option.icon} />
-                </span>
-                <span className="appearance-copy">
-                  <strong>{option.label}</strong>
-                  <small>{option.detail}</small>
-                </span>
-                <span className="radio-mark">
-                  {navLayout === option.key && <Icon name="check" size={13} />}
-                </span>
-              </Button>
-            ))}
-          </div>
-        </div>
+                {appearanceOptions.map((option) => (
+                  <Button
+                    aria-checked={preferences.appearance === option.key}
+                    className={`appearance-option ${
+                      preferences.appearance === option.key ? "selected" : ""
+                    }`}
+                    key={option.key}
+                    onClick={() => onUpdatePreferences({ appearance: option.key })}
+                    role="radio"
+                  >
+                    <span className="appearance-icon">
+                      <Icon name={option.icon} />
+                    </span>
+                    <span className="appearance-copy">
+                      <strong>{option.label}</strong>
+                      <small>{option.detail}</small>
+                    </span>
+                    <span className="radio-mark">
+                      {preferences.appearance === option.key && <Icon name="check" size={13} />}
+                    </span>
+                  </Button>
+                ))}
+              </div>
+            </div>
 
-        <p className="settings-footnote">Saved locally on this device.</p>
+            {/* Layout */}
+            <div className="settings-section">
+              <h3>Desktop Navigation</h3>
+              <p>Choose desktop navigation position.</p>
+              <div
+                aria-label="Navigation position"
+                className="appearance-options"
+                role="radiogroup"
+              >
+                {layoutOptions.map((option) => (
+                  <Button
+                    aria-checked={preferences.navLayout === option.key}
+                    className={`appearance-option ${
+                      preferences.navLayout === option.key ? "selected" : ""
+                    }`}
+                    key={option.key}
+                    onClick={() => onUpdatePreferences({ navLayout: option.key })}
+                    role="radio"
+                  >
+                    <span className="appearance-icon">
+                      <Icon name={option.icon} />
+                    </span>
+                    <span className="appearance-copy">
+                      <strong>{option.label}</strong>
+                      <small>{option.detail}</small>
+                    </span>
+                    <span className="radio-mark">
+                      {preferences.navLayout === option.key && <Icon name="check" size={13} />}
+                    </span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Density */}
+            <div className="settings-section">
+              <h3>Interface Density</h3>
+              <p>Adjust padding, row heights, and layout compactness.</p>
+              <div
+                aria-label="Interface density"
+                className="appearance-options"
+                role="radiogroup"
+              >
+                {densityOptions.map((option) => (
+                  <Button
+                    aria-checked={preferences.density === option.key}
+                    className={`appearance-option ${
+                      preferences.density === option.key ? "selected" : ""
+                    }`}
+                    key={option.key}
+                    onClick={() => onUpdatePreferences({ density: option.key })}
+                    role="radio"
+                  >
+                    <span className="appearance-copy">
+                      <strong>{option.label}</strong>
+                      <small>{option.detail}</small>
+                    </span>
+                    <span className="radio-mark">
+                      {preferences.density === option.key && <Icon name="check" size={13} />}
+                    </span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Text Scaling */}
+            <div className="settings-section">
+              <h3>Text Size</h3>
+              <p>Scale interface typography for enhanced comfort.</p>
+              <div
+                aria-label="Text size"
+                className="appearance-options"
+                role="radiogroup"
+              >
+                {textSizeOptions.map((option) => (
+                  <Button
+                    aria-checked={preferences.textSize === option.key}
+                    className={`appearance-option ${
+                      preferences.textSize === option.key ? "selected" : ""
+                    }`}
+                    key={option.key}
+                    onClick={() => onUpdatePreferences({ textSize: option.key })}
+                    role="radio"
+                  >
+                    <span className="appearance-copy">
+                      <strong>{option.label}</strong>
+                      <small>{option.detail}</small>
+                    </span>
+                    <span className="radio-mark">
+                      {preferences.textSize === option.key && <Icon name="check" size={13} />}
+                    </span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: ACCESSIBILITY */}
+        {activeTab === "accessibility" && (
+          <div className="settings-tab-content">
+            <div className="settings-section">
+              <h3>Motion & Display Comfort</h3>
+              <p>Fine-tune motion dynamics, glass transparency, and contrast.</p>
+
+              {/* Reduced Motion */}
+              <div className="settings-toggle-row">
+                <div className="toggle-info">
+                  <strong>Reduce motion</strong>
+                  <small>
+                    Minimize transitions, numerical count-ups, and scroll-driven presentations.
+                  </small>
+                  {deviceReducedMotion && (
+                    <span className="device-active-badge">
+                      Active via device settings (system preference)
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={preferences.reducedMotion || deviceReducedMotion}
+                  aria-label="Reduce motion"
+                  className="switch-button"
+                  onClick={() =>
+                    onUpdatePreferences({ reducedMotion: !preferences.reducedMotion })
+                  }
+                >
+                  <span className="switch-thumb" />
+                </button>
+              </div>
+              {deviceReducedMotion && (
+                <div className="settings-info-card" style={{ marginTop: 8 }}>
+                  <p>
+                    Your operating system has requested reduced motion. FinSight AI honors your device preference even if the app switch is turned off.
+                  </p>
+                </div>
+              )}
+
+              {/* Reduced Transparency */}
+              <div className="settings-toggle-row">
+                <div className="toggle-info">
+                  <strong>Reduce transparency</strong>
+                  <small>
+                    Disable backdrop blur and replace translucent glass with solid opaque panels.
+                  </small>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={preferences.reducedTransparency}
+                  aria-label="Reduce transparency"
+                  className="switch-button"
+                  onClick={() =>
+                    onUpdatePreferences({
+                      reducedTransparency: !preferences.reducedTransparency,
+                    })
+                  }
+                >
+                  <span className="switch-thumb" />
+                </button>
+              </div>
+
+              {/* High Contrast */}
+              <div className="settings-toggle-row">
+                <div className="toggle-info">
+                  <strong>Higher contrast</strong>
+                  <small>
+                    Strengthen borders, deepen text contrast, and enhance keyboard focus indicators.
+                  </small>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={preferences.highContrast}
+                  aria-label="Higher contrast"
+                  className="switch-button"
+                  onClick={() =>
+                    onUpdatePreferences({
+                      highContrast: !preferences.highContrast,
+                    })
+                  }
+                >
+                  <span className="switch-thumb" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: DATA & PRIVACY */}
+        {activeTab === "data" && (
+          <div className="settings-tab-content">
+            <div className="settings-section">
+              <h3>Storage & Privacy</h3>
+              <p>Understand how FinSight AI stores configuration and handles financial files.</p>
+
+              <div className="settings-info-card">
+                <strong>Local Storage Key</strong>
+                <p>
+                  Theme, layout, density, typography scaling, and accessibility preferences are saved strictly in your browser local storage (<code>finsight-preferences-v2</code>). No tracking cookies or telemetry exist.
+                </p>
+              </div>
+
+              <div className="settings-info-card">
+                <strong>In-Memory Session Documents</strong>
+                <p>
+                  Any PDF files selected on the Documents page remain exclusively in volatile browser memory for the active session. FinSight AI runs client-side and never uploads or persists your private financial documents to an external server.
+                </p>
+              </div>
+
+              <div className="settings-section" style={{ marginTop: 20 }}>
+                <h3>Reset Preferences</h3>
+                <p>Restore default layout, theme, density, and accessibility settings.</p>
+
+                {!showResetConfirm ? (
+                  <Button
+                    className="secondary"
+                    style={{ marginTop: 8 }}
+                    onClick={() => setShowResetConfirm(true)}
+                  >
+                    Reset all preferences to defaults
+                  </Button>
+                ) : (
+                  <div className="reset-confirm-box">
+                    <p>
+                      Are you sure you want to restore default preferences? Your active session documents and local files will NOT be deleted.
+                    </p>
+                    <div className="reset-confirm-actions">
+                      <button
+                        type="button"
+                        className="btn-danger-confirm button"
+                        onClick={() => {
+                          onResetPreferences()
+                          setShowResetConfirm(false)
+                        }}
+                      >
+                        Yes, reset preferences
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-cancel-reset button"
+                        onClick={() => setShowResetConfirm(false)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: ABOUT */}
+        {activeTab === "about" && (
+          <div className="settings-tab-content">
+            <div className="settings-section">
+              <h3>FinSight AI · Glass Ledger</h3>
+              <p>Financial document intelligence and interactive ratio verification prototype.</p>
+
+              <div className="settings-info-card">
+                <strong>Fictional Benchmark Dataset</strong>
+                <p>
+                  All figures, charts, and ratios in this prototype reflect the fictional 5-year Northstar Manufacturing Corp dataset (FY2020–FY2024). They are not derived from your uploaded files.
+                </p>
+              </div>
+
+              <div className="settings-info-card">
+                <strong>Prototype Scope vs Production Roadmap</strong>
+                <p>
+                  This client-side prototype demonstrates UI ergonomics, liquid-glass materials, accessible multi-year statements, deterministic ratio cross-checks, and document processing simulation. Production deployment connects to private OCR and audited LLM extractors.
+                </p>
+              </div>
+
+              <div style={{ marginTop: 16 }}>
+                <Button
+                  className="primary"
+                  onClick={() => {
+                    onNavigate("analysis")
+                    onClose()
+                  }}
+                >
+                  <Icon name="analysis" size={14} />
+                  <span>View Financial Analysis & Methodology</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <p className="settings-footnote">FinSight AI · Glass Ledger Prototype</p>
       </aside>
     </div>
   )
@@ -1336,9 +1700,70 @@ function SettingsPanel({
 
 /* ─── State Persistence Keys ────────────────────────────────────────────────── */
 
+const PREFERENCES_STORAGE_KEY = "finsight-preferences-v2"
 const APPEARANCE_KEY = "finsight-appearance"
 const REDESIGN_KEY = "finsight-lavender-v2"
 const NAV_LAYOUT_KEY = "finsight-nav-layout"
+
+const DEFAULT_PREFERENCES: UserPreferences = {
+  appearance: "light",
+  navLayout: "sidebar",
+  density: "comfortable",
+  textSize: "default",
+  reducedMotion: false,
+  reducedTransparency: false,
+  highContrast: false,
+}
+
+function getInitialPreferences(): UserPreferences {
+  try {
+    const raw = window.localStorage.getItem(PREFERENCES_STORAGE_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<UserPreferences>
+      return {
+        appearance:
+          parsed.appearance === "dark" ||
+          parsed.appearance === "light" ||
+          parsed.appearance === "system"
+            ? parsed.appearance
+            : DEFAULT_PREFERENCES.appearance,
+        navLayout:
+          parsed.navLayout === "sidebar" || parsed.navLayout === "topbar"
+            ? parsed.navLayout
+            : DEFAULT_PREFERENCES.navLayout,
+        density:
+          parsed.density === "compact" || parsed.density === "comfortable"
+            ? parsed.density
+            : DEFAULT_PREFERENCES.density,
+        textSize:
+          parsed.textSize === "large" || parsed.textSize === "default"
+            ? parsed.textSize
+            : DEFAULT_PREFERENCES.textSize,
+        reducedMotion: Boolean(parsed.reducedMotion),
+        reducedTransparency: Boolean(parsed.reducedTransparency),
+        highContrast: Boolean(parsed.highContrast),
+      }
+    }
+    // Migration fallback from older keys if present
+    const legacyAppearance = window.localStorage.getItem(APPEARANCE_KEY)
+    const legacyNav = window.localStorage.getItem(NAV_LAYOUT_KEY)
+    return {
+      ...DEFAULT_PREFERENCES,
+      appearance:
+        legacyAppearance === "dark" ||
+        legacyAppearance === "light" ||
+        legacyAppearance === "system"
+          ? legacyAppearance
+          : DEFAULT_PREFERENCES.appearance,
+      navLayout:
+        legacyNav === "sidebar" || legacyNav === "topbar"
+          ? legacyNav
+          : DEFAULT_PREFERENCES.navLayout,
+    }
+  } catch {
+    return DEFAULT_PREFERENCES
+  }
+}
 
 function getRouteFromHash(): AppRoute {
   const route = window.location.hash.replace(/^#\/?/, "")
@@ -1354,39 +1779,21 @@ function getRouteFromHash(): AppRoute {
   return "landing"
 }
 
-function getInitialAppearance(): Appearance {
-  try {
-    if (!window.localStorage.getItem(REDESIGN_KEY)) {
-      window.localStorage.setItem(REDESIGN_KEY, "applied")
-      window.localStorage.setItem(APPEARANCE_KEY, "light")
-      return "light"
-    }
-    const stored = window.localStorage.getItem(APPEARANCE_KEY)
-    if (stored === "dark" || stored === "light" || stored === "system")
-      return stored
-  } catch {
-    // Privacy-restricted environments
-  }
-  return "light"
-}
-
-function getInitialNavLayout(): NavLayout {
-  try {
-    const stored = window.localStorage.getItem(NAV_LAYOUT_KEY)
-    if (stored === "sidebar" || stored === "topbar") return stored
-  } catch {
-    // Privacy-restricted environments
-  }
-  return "sidebar"
-}
-
 /* ─── Main App Component ─────────────────────────────────────────────────────── */
 
 export default function App() {
   const [period, setPeriod] = useState<Period>("FY2024")
   const [metric, setMetric] = useState<Metric>("revenue")
-  const [appearance, setAppearance] = useState<Appearance>(getInitialAppearance)
-  const [navLayout, setNavLayout] = useState<NavLayout>(getInitialNavLayout)
+  const [preferences, setPreferences] = useState<UserPreferences>(getInitialPreferences)
+  const [deviceReducedMotion, setDeviceReducedMotion] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  })
+  const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+  })
+  const [aboutDataOpen, setAboutDataOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [route, setRoute] = useState<AppRoute>(getRouteFromHash)
@@ -1407,27 +1814,48 @@ export default function App() {
     return () => window.removeEventListener("hashchange", syncRoute)
   }, [])
 
-  // Appearance theme listener
+  // Media query listeners for device preference changes
   useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)")
-    const applyTheme = () => {
-      const effective =
-        appearance === "system"
-          ? media.matches
-            ? "dark"
-            : "light"
-          : appearance
-      document.documentElement.dataset.theme = effective
+    const motionMedia = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const handleMotionChange = (e: MediaQueryListEvent) => setDeviceReducedMotion(e.matches)
+    motionMedia.addEventListener("change", handleMotionChange)
+
+    const colorMedia = window.matchMedia("(prefers-color-scheme: dark)")
+    const handleColorChange = (e: MediaQueryListEvent) => setSystemPrefersDark(e.matches)
+    colorMedia.addEventListener("change", handleColorChange)
+
+    return () => {
+      motionMedia.removeEventListener("change", handleMotionChange)
+      colorMedia.removeEventListener("change", handleColorChange)
     }
-    applyTheme()
-    media.addEventListener("change", applyTheme)
+  }, [])
+
+  const effectiveTheme =
+    preferences.appearance === "system"
+      ? systemPrefersDark
+        ? "dark"
+        : "light"
+      : preferences.appearance
+
+  const effectiveReducedMotion = deviceReducedMotion || preferences.reducedMotion
+
+  // Synchronize design token data attributes on root DOM element
+  useEffect(() => {
+    const root = document.documentElement
+    root.setAttribute("data-theme", effectiveTheme)
+    root.setAttribute("data-nav", preferences.navLayout)
+    root.setAttribute("data-density", preferences.density)
+    root.setAttribute("data-text-size", preferences.textSize)
+    root.setAttribute("data-motion", effectiveReducedMotion ? "reduced" : "normal")
+    root.setAttribute("data-transparency", preferences.reducedTransparency ? "reduced" : "normal")
+    root.setAttribute("data-contrast", preferences.highContrast ? "high" : "normal")
+
     try {
-      window.localStorage.setItem(APPEARANCE_KEY, appearance)
+      window.localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(preferences))
     } catch {
       // Storage fallback
     }
-    return () => media.removeEventListener("change", applyTheme)
-  }, [appearance])
+  }, [preferences, effectiveTheme, effectiveReducedMotion])
 
   // Body panel open lock
   useEffect(() => {
@@ -1473,13 +1901,12 @@ export default function App() {
     window.location.hash = nextHash
   }
 
-  const handleNavLayoutChange = (layout: NavLayout) => {
-    setNavLayout(layout)
-    try {
-      window.localStorage.setItem(NAV_LAYOUT_KEY, layout)
-    } catch {
-      // Storage fallback
-    }
+  const handleUpdatePreferences = (updates: Partial<UserPreferences>) => {
+    setPreferences((prev) => ({ ...prev, ...updates }))
+  }
+
+  const handleResetPreferences = () => {
+    setPreferences(DEFAULT_PREFERENCES)
   }
 
   const openSettings = (trigger: HTMLButtonElement) => {
@@ -1586,17 +2013,21 @@ export default function App() {
   const hasComparison = Boolean(previous)
 
   if (route === "landing") {
-    return <LandingPage onExplore={() => navigate("overview")} />
+    return <LandingPage onExplore={() => navigate("overview")} isReducedMotion={effectiveReducedMotion} />
   }
 
   return (
     <div
       className={`app-shell ${
-        navLayout === "sidebar" ? "layout-sidebar" : "layout-topbar"
+        preferences.navLayout === "sidebar" ? "layout-sidebar" : "layout-topbar"
       }`}
     >
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+
       {/* Desktop Layout 1: Sidebar (Rendered ONLY when navLayout is sidebar) */}
-      {navLayout === "sidebar" && (
+      {preferences.navLayout === "sidebar" && (
         <Sidebar
           activePage={activePage}
           onLanding={() => navigate("landing")}
@@ -1607,7 +2038,7 @@ export default function App() {
 
       <div className="main-area">
         {/* Desktop Layout 2: Top Bar (Rendered ONLY when navLayout is topbar) */}
-        {navLayout === "topbar" && (
+        {preferences.navLayout === "topbar" && (
           <TopBarNav
             activePage={activePage}
             onLanding={() => navigate("landing")}
@@ -1632,7 +2063,7 @@ export default function App() {
           onSettings={openSettings}
         />
 
-        <main className="page-content">
+        <main id="main-content" className="page-content">
           {activePage === "documents" ? (
             <DocumentsPage
               activeSimId={activeSimId}
@@ -1700,6 +2131,7 @@ export default function App() {
                     comparison={comparison}
                     current={current}
                     hasComparison={hasComparison}
+                    isReducedMotion={effectiveReducedMotion}
                     period={period}
                     priorPeriod={priorPeriod}
                   />
@@ -1716,6 +2148,31 @@ export default function App() {
                   </div>
                 </div>
               </div>
+
+              {/* Expandable About this Dataset Section */}
+              <div className="overview-about-data surface entrance entrance-3">
+                <button
+                  type="button"
+                  className="about-data-toggle"
+                  onClick={() => setAboutDataOpen((prev) => !prev)}
+                  aria-expanded={aboutDataOpen}
+                >
+                  <span>About Northstar Manufacturing benchmark dataset</span>
+                  <Icon name={aboutDataOpen ? "arrowUp" : "arrowDown"} size={14} />
+                </button>
+                {aboutDataOpen && (
+                  <div className="about-data-body">
+                    <p>
+                      FinSight AI is currently populated with a curated 5-year benchmark dataset (FY2020–FY2024) representing Northstar Manufacturing Corp.
+                    </p>
+                    <ul>
+                      <li><strong>Scope:</strong> Multi-year financial statements including Income Statement, Balance Sheet, and Cash Flow metrics.</li>
+                      <li><strong>Fictional Baseline:</strong> All figures are strictly illustrative and not extracted from your uploaded documents.</li>
+                      <li><strong>Methodology:</strong> Standardized GAAP formulations for Growth, Profitability, Liquidity, and Solvency ratios with real-time discrepancy verification.</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </main>
@@ -1724,11 +2181,12 @@ export default function App() {
 
       {settingsOpen && (
         <SettingsPanel
-          appearance={appearance}
-          navLayout={navLayout}
-          onAppearance={setAppearance}
+          deviceReducedMotion={deviceReducedMotion}
           onClose={closeSettings}
-          onNavLayout={handleNavLayoutChange}
+          onNavigate={navigate}
+          onResetPreferences={handleResetPreferences}
+          onUpdatePreferences={handleUpdatePreferences}
+          preferences={preferences}
         />
       )}
     </div>

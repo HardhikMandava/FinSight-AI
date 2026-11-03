@@ -1,4 +1,4 @@
-import { FormEvent, useRef, useState } from "react"
+import { FormEvent, useEffect, useRef, useState } from "react"
 import { financialData } from "../data/financialData"
 import { evaluateRisks } from "../utils/riskEvaluation"
 import {
@@ -85,6 +85,11 @@ export default function AssistantPage() {
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const nextId = useRef(2)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages, loading])
 
   const ask = (question: string) => {
     const clean = question.trim()
@@ -196,6 +201,7 @@ export default function AssistantPage() {
                 </div>
               </article>
             )}
+            <div ref={messagesEndRef} />
           </div>
           <form className="assistant-composer" onSubmit={submit}>
             <label className="sr-only" htmlFor="assistant-question">

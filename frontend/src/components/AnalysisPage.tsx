@@ -16,6 +16,7 @@ import {
   calculateROA,
   calculateROE,
   calculateCashFlowGrowth,
+  calculateNetIncomeGrowth,
   calculateMarginChange,
   METHODOLOGY_DISCLOSURES,
   type CalculationResult,
@@ -26,7 +27,7 @@ type ChartMetric = "revenue" | "income" | "cashFlow"
 type ChartMode = "comparison" | "trend"
 
 interface AnalysisPageProps {
-  onNavigate: (page: "overview" | "documents" | "analysis" | "risks") => void
+  onNavigate: (page: "overview" | "documents" | "analysis" | "risks" | "assistant") => void
   selectedPeriod: Period
   onPeriodChange: (period: Period) => void
 }
@@ -149,6 +150,10 @@ export default function AnalysisPage({
   const cfGrowthResult = calculateCashFlowGrowth(
     current.cashFlow,
     prior?.cashFlow,
+  )
+  const niGrowthResult = calculateNetIncomeGrowth(
+    current.income,
+    prior?.income,
   )
 
   const metricLabels: Record<ChartMetric, string> = {
@@ -581,6 +586,75 @@ export default function AnalysisPage({
             }
             suffix="×"
             trend="neutral"
+          />
+
+          {/* Net Income Growth - Growth / Profitability */}
+          <RatioCard
+            category="growth"
+            categoryLabel="Growth"
+            formula="(Current NI − Prior NI) / Prior NI × 100"
+            label="Net income growth"
+            period={selectedPeriod}
+            result={niGrowthResult}
+            subtext={
+              prior
+                ? `Net income: $${current.income}M vs $${prior.income}M in ${priorPeriod}`
+                : "Prior year baseline unavailable"
+            }
+            suffix="%"
+            trend={
+              niGrowthResult.status === "available"
+                ? niGrowthResult.value >= 0
+                  ? "positive"
+                  : "negative"
+                : "neutral"
+            }
+          />
+
+          {/* Operating Cash Flow Growth - Growth / Liquidity */}
+          <RatioCard
+            category="liquidity"
+            categoryLabel="Cash flow"
+            formula="(Current CF − Prior CF) / Prior CF × 100"
+            label="Operating cash flow growth"
+            period={selectedPeriod}
+            result={cfGrowthResult}
+            subtext={
+              prior
+                ? `Cash flow: $${current.cashFlow}M vs $${prior.cashFlow}M in ${priorPeriod}`
+                : "Prior year baseline unavailable"
+            }
+            suffix="%"
+            trend={
+              cfGrowthResult.status === "available"
+                ? cfGrowthResult.value >= 0
+                  ? "positive"
+                  : "negative"
+                : "neutral"
+            }
+          />
+
+          {/* Margin Change - Profitability */}
+          <RatioCard
+            category="profitability"
+            categoryLabel="Profitability"
+            formula="Current Net Margin − Prior Net Margin"
+            label="Margin change"
+            period={selectedPeriod}
+            result={marginChangeResult}
+            subtext={
+              prior
+                ? `${current.margin.toFixed(1)}% vs ${prior.margin.toFixed(1)}% in ${priorPeriod}`
+                : "Prior year baseline unavailable"
+            }
+            suffix=" pp"
+            trend={
+              marginChangeResult.status === "available"
+                ? marginChangeResult.value >= 0
+                  ? "positive"
+                  : "negative"
+                : "neutral"
+            }
           />
         </div>
 

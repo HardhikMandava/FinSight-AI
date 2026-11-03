@@ -1,12 +1,14 @@
 import { financialData, SAMPLE_NOTICE } from "../data/financialData"
 import { evaluateRisks } from "../utils/riskEvaluation"
 import LogoMark from "./LogoMark"
+import CinematicProductSequence from "./CinematicProductSequence"
 
 type LandingPageProps = {
   onExplore: () => void
+  isReducedMotion?: boolean
 }
 
-const metrics = [
+const heroMetrics = [
   { label: "Revenue", value: "$516M", detail: "+7.5% YoY", tone: "revenue" },
   {
     label: "Net income",
@@ -66,15 +68,23 @@ function MiniChart() {
   )
 }
 
-export default function LandingPage({ onExplore }: LandingPageProps) {
+export default function LandingPage({
+  onExplore,
+  isReducedMotion = false,
+}: LandingPageProps) {
   const riskSummary = evaluateRisks("FY2024").summary
 
   const scrollToWorkflow = () => {
-    document.getElementById("workflow")?.scrollIntoView({ behavior: "smooth" })
+    document.getElementById("product-story")?.scrollIntoView({ behavior: "smooth" })
   }
 
   return (
     <div className="landing-page">
+      {/* Skip to Main Content for Accessibility */}
+      <a className="skip-link" href="#main-content">
+        Skip to main content
+      </a>
+
       <header className="landing-nav">
         <button
           aria-label="FinSight AI home"
@@ -103,7 +113,8 @@ export default function LandingPage({ onExplore }: LandingPageProps) {
         </button>
       </header>
 
-      <main>
+      <main id="main-content">
+        {/* Hero Section */}
         <section className="landing-hero">
           <div className="hero-copy">
             <span className="eyebrow">
@@ -115,9 +126,9 @@ export default function LandingPage({ onExplore }: LandingPageProps) {
               <em>See the reasoning.</em>
             </h1>
             <p>
-              FinSight brings reported figures, deterministic ratios, risk
-              rules, and document-grounded explanations into one traceable
-              workspace.
+              FinSight AI connects reported statement rows, deterministic ratios,
+              transparent risk screening rules, and grounded explanations into one
+              traceable workspace.
             </p>
             <div className="hero-actions">
               <button
@@ -125,29 +136,32 @@ export default function LandingPage({ onExplore }: LandingPageProps) {
                 onClick={onExplore}
                 type="button"
               >
-                Explore the prototype <ArrowIcon />
+                Explore demo workspace <ArrowIcon />
               </button>
               <button
                 className="button hero-secondary"
                 onClick={scrollToWorkflow}
                 type="button"
               >
-                How it works
+                See how it works
               </button>
             </div>
             <p className="hero-honesty">
-              Fictional sample data. No account required. No files uploaded.
+              Fictional sample data (FY2020–FY2024). No account required. Files remain local in memory.
             </p>
           </div>
 
+          {/* Right Column: Glassy Dimensional Workspace Preview */}
           <div
             className="product-stage"
-            aria-label="Preview of the FinSight overview"
+            aria-label="Preview of the FinSight workspace"
           >
             <div className="stage-glow" />
             <div className="preview-window surface">
               <div className="preview-rail" aria-hidden="true">
-                <span className="preview-logo">F</span>
+                <span className="preview-logo" style={{ background: "transparent", padding: 0 }}>
+                  <LogoMark />
+                </span>
                 {[0, 1, 2, 3, 4].map((item) => (
                   <i className={item === 0 ? "active" : ""} key={item} />
                 ))}
@@ -161,7 +175,7 @@ export default function LandingPage({ onExplore }: LandingPageProps) {
                   <span>FY2024</span>
                 </div>
                 <div className="preview-metrics">
-                  {metrics.map((metric) => (
+                  {heroMetrics.map((metric) => (
                     <article
                       className={`preview-metric ${metric.tone}`}
                       key={metric.label}
@@ -215,46 +229,13 @@ export default function LandingPage({ onExplore }: LandingPageProps) {
           </div>
         </section>
 
-        <section className="workflow-section" id="workflow">
-          <div className="section-kicker">THE INTENDED WORKFLOW</div>
-          <div className="workflow-heading">
-            <h2>
-              From report to reasoning,
-              <br />
-              without losing the trail.
-            </h2>
-            <p>
-              Each layer stays distinct, so users can tell what was reported,
-              what was calculated, and what was explained.
-            </p>
-          </div>
-          <div className="workflow-steps">
-            {[
-              [
-                "01",
-                "Select a report",
-                "Choose a PDF and preview the processing experience. In this prototype, files remain only in browser memory.",
-              ],
-              [
-                "02",
-                "Inspect the financials",
-                "Move from reported figures to five-year trends, period comparisons, and formulas you can verify.",
-              ],
-              [
-                "03",
-                "Question with context",
-                "Explore deterministic demo answers today; verified source citations are planned with backend integration.",
-              ],
-            ].map(([number, title, copy]) => (
-              <article key={number}>
-                <span>{number}</span>
-                <h3>{title}</h3>
-                <p>{copy}</p>
-              </article>
-            ))}
-          </div>
-        </section>
+        {/* Section 6: Cinematic Apple-Style Scroll Product Presentation */}
+        <CinematicProductSequence
+          isReducedMotion={isReducedMotion}
+          onExplore={onExplore}
+        />
 
+        {/* Core Capabilities Section */}
         <section className="capabilities-section" id="capabilities">
           <article className="capability-editorial capability-analysis">
             <div className="capability-copy">
@@ -264,8 +245,8 @@ export default function LandingPage({ onExplore }: LandingPageProps) {
                 <br />a point of view.
               </h2>
               <p>
-                Compare periods, inspect five-year movement, and understand
-                exactly how each ratio is calculated.
+                Inspect five-year historical performance, compare fiscal periods,
+                and review deterministic formulas directly alongside reported statement items.
               </p>
               <button
                 className="button text-link"
@@ -288,7 +269,7 @@ export default function LandingPage({ onExplore }: LandingPageProps) {
                 <span>FY2024</span>
                 <strong>8.5%</strong>
               </div>
-              <p>−1.5 percentage points</p>
+              <p>−1.5 percentage points YoY</p>
             </div>
           </article>
 
@@ -327,8 +308,8 @@ export default function LandingPage({ onExplore }: LandingPageProps) {
                 black boxes.
               </h2>
               <p>
-                Every indicator exposes its threshold, supporting figures, and
-                state. No invented causes and no opaque health score.
+                Every rule exposes its exact threshold, supporting figures, and evaluation status.
+                Untriggered flags indicate condition absence, not an audited clean bill of health.
               </p>
             </div>
           </article>
@@ -336,7 +317,7 @@ export default function LandingPage({ onExplore }: LandingPageProps) {
           <article className="capability-editorial capability-evidence">
             <div className="capability-copy">
               <span className="section-kicker">
-                EVIDENCE-BASED EXPLANATIONS
+                GROUNDED ASSISTANCE
               </span>
               <h2>
                 Answers that show
@@ -344,25 +325,25 @@ export default function LandingPage({ onExplore }: LandingPageProps) {
                 their working.
               </h2>
               <p>
-                The demo assistant responds from the sample dataset. Future
-                integration will ground explanations in actual documents with
-                verified citations.
+                The demo assistant evaluates questions using structured Northstar data.
+                Full PDF citations and text groundings require server-side extraction.
               </p>
             </div>
             <blockquote className="assistant-preview surface">
               <small>DEMO ASSISTANT</small>
               <p>
                 Revenue increased by <mark>7.5%</mark>, from $480M in FY2023 to
-                $516M in FY2024.
+                $516M in FY2024. Operating cash flow declined from $65M to $58M.
               </p>
               <footer>
-                <span>Calculated from sample data</span>
-                <span>Verified citations planned</span>
+                <span>Calculated from fictional dataset</span>
+                <span>Verified citations planned with backend</span>
               </footer>
             </blockquote>
           </article>
         </section>
 
+        {/* Traceability Lineage Section */}
         <section className="trace-section">
           <div>
             <span className="section-kicker">TRACEABILITY BY DESIGN</span>
@@ -373,35 +354,32 @@ export default function LandingPage({ onExplore }: LandingPageProps) {
             </h2>
           </div>
           <div className="trace-stack">
-            <article>
+            <article className="surface">
               <span>01</span>
               <div>
-                <h3>Reported figures</h3>
+                <h3>Reported statement figures</h3>
                 <p>
-                  The financial statement values as presented in the source
-                  material.
+                  Line items extracted directly from source filings without alterations.
                 </p>
               </div>
               <b>$516M</b>
             </article>
-            <article>
+            <article className="surface">
               <span>02</span>
               <div>
-                <h3>Calculated ratios</h3>
+                <h3>Deterministic formulas</h3>
                 <p>
-                  Deterministic formulas applied to reported figures with
-                  visible definitions.
+                  Mathematical ratios and percentage changes with visible definitions.
                 </p>
               </div>
               <b>8.5%</b>
             </article>
-            <article>
+            <article className="surface">
               <span>03</span>
               <div>
-                <h3>Supporting sources</h3>
+                <h3>Evidence & citations</h3>
                 <p>
-                  Page-level evidence is part of the planned extraction and
-                  citation workflow.
+                  Page-level citations and bounding boxes are supported with backend extraction.
                 </p>
               </div>
               <b>Planned</b>
@@ -409,62 +387,72 @@ export default function LandingPage({ onExplore }: LandingPageProps) {
           </div>
         </section>
 
+        {/* Prototype Scope Matrix */}
         <section className="scope-section" id="roadmap">
           <div className="scope-intro">
             <span className="section-kicker">HONEST PROTOTYPE SCOPE</span>
-            <h2>Built to make the intended experience tangible.</h2>
+            <h2>Built to make document intelligence tangible.</h2>
           </div>
           <div className="scope-columns">
-            <article>
-              <span>Available now</span>
+            <article className="surface scope-card-available">
+              <span className="scope-badge badge-now">Available in this demo</span>
               <ul>
-                <li>Five-year fictional financial dataset</li>
-                <li>Deterministic ratios and risk rules</li>
-                <li>Local file selection and simulated progress</li>
-                <li>Predefined, data-grounded demo answers</li>
+                <li>Five-year Northstar Manufacturing dataset (FY2020–FY2024)</li>
+                <li>9 calculated financial ratios with missing-data handling</li>
+                <li>7 rule-based screening flags with Watch & Elevated severities</li>
+                <li>Local PDF selection, size checks, and simulated processing</li>
+                <li>Interactive demo assistant answering financial queries</li>
               </ul>
             </article>
-            <article>
-              <span>Requires backend integration</span>
+            <article className="surface scope-card-planned">
+              <span className="scope-badge badge-roadmap">Requires backend integration</span>
               <ul>
-                <li>PDF upload, storage, and extraction</li>
-                <li>Document-grounded language models</li>
-                <li>Verified page-level source citations</li>
-                <li>Authentication and persistent workspaces</li>
+                <li>Server-side PDF OCR parsing and table extraction</li>
+                <li>Document-grounded language model reasoning</li>
+                <li>Page-level bounding box highlights and citation anchors</li>
+                <li>User accounts, persistent libraries, and multi-tenant workspaces</li>
               </ul>
             </article>
           </div>
         </section>
 
+        {/* Final CTA Section */}
         <section className="landing-final">
           <span className="section-kicker">
-            EXPLORE NORTHSTAR MANUFACTURING
+            EXPLORE THE PROTOTYPE
           </span>
           <h2>See the full reasoning layer.</h2>
           <p>
-            Preview the intended workflow using a transparent, fictional
-            five-year dataset.
+            Inspect the five-year Northstar dataset across overview, analysis, risk screening,
+            and the interactive demo assistant.
           </p>
           <button
             className="button hero-primary"
             onClick={onExplore}
             type="button"
           >
-            Explore the prototype <ArrowIcon />
+            Launch demo workspace <ArrowIcon />
           </button>
         </section>
       </main>
 
+      {/* Landing Footer with Single Exact Disclosure */}
       <footer className="landing-footer">
-        <div className="landing-brand">
-          <LogoMark />
-          <span>FinSight AI</span>
+        <div className="landing-footer-top">
+          <div className="landing-brand">
+            <LogoMark />
+            <span>FinSight AI</span>
+          </div>
+          <p className="landing-tagline">
+            Financial document intelligence prototype combining reported statement figures,
+            deterministic ratios, and risk indicators.
+          </p>
         </div>
-        <p>Financial document intelligence, designed for clarity.</p>
-        <div>
+        <div className="landing-footer-links">
           <button onClick={scrollToWorkflow} type="button">
             How it works
           </button>
+          <a href="#capabilities">Capabilities</a>
           <a href="#roadmap">Prototype scope</a>
           <button onClick={onExplore} type="button">
             Open demo

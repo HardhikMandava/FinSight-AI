@@ -12,7 +12,7 @@ import {
 } from "../utils/riskEvaluation"
 
 interface RisksPageProps {
-  onNavigate: (page: "overview" | "documents" | "analysis" | "risks") => void
+  onNavigate: (page: "overview" | "documents" | "analysis" | "risks" | "assistant") => void
   selectedPeriod: Period
   onPeriodChange: (period: Period) => void
 }
