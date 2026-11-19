@@ -884,8 +884,276 @@
   color: var(--text-muted);
 }
 
-/* ─── Dashboard Grid (29% / 71%) ───────────────────────────────────────────── */
+/* ─── Dashboard Overview Layout ────────────────────────────────────────────── */
 
+.overview-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.overview-stat-card {
+  position: relative;
+  border-radius: 20px;
+  padding: 18px 20px 16px;
+  background: var(--glass-panel);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm), var(--inset-highlight);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  transition: transform 180ms var(--ease), box-shadow 180ms var(--ease), border-color 180ms var(--ease);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
+  overflow: hidden;
+}
+
+.overview-stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  opacity: 0.85;
+}
+
+.overview-stat-card.tile-revenue::before { background: var(--cat-revenue); }
+.overview-stat-card.tile-profit::before { background: var(--cat-profit); }
+.overview-stat-card.tile-cashflow::before { background: var(--cat-cashflow); }
+.overview-stat-card.tile-assets::before { background: var(--cat-assets); }
+
+.overview-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md), var(--inset-highlight);
+}
+
+[data-theme="dark"] .overview-stat-card.tile-revenue:hover {
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.6), 0 0 24px -4px rgba(255, 181, 104, 0.22), var(--inset-highlight);
+  border-color: rgba(255, 181, 104, 0.35);
+}
+
+[data-theme="dark"] .overview-stat-card.tile-profit:hover {
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.6), 0 0 24px -4px rgba(183, 148, 246, 0.22), var(--inset-highlight);
+  border-color: rgba(183, 148, 246, 0.35);
+}
+
+[data-theme="dark"] .overview-stat-card.tile-cashflow:hover {
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.6), 0 0 24px -4px rgba(56, 189, 248, 0.22), var(--inset-highlight);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+[data-theme="dark"] .overview-stat-card.tile-assets:hover {
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.6), 0 0 24px -4px rgba(96, 165, 250, 0.22), var(--inset-highlight);
+  border-color: rgba(96, 165, 250, 0.35);
+}
+
+.stat-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stat-card-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: -0.01em;
+}
+
+.stat-card-icon-pill {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.tile-revenue .stat-card-icon-pill { background: var(--cat-revenue); box-shadow: 0 0 8px var(--cat-revenue); }
+.tile-profit .stat-card-icon-pill { background: var(--cat-profit); box-shadow: 0 0 8px var(--cat-profit); }
+.tile-cashflow .stat-card-icon-pill { background: var(--cat-cashflow); box-shadow: 0 0 8px var(--cat-cashflow); }
+.tile-assets .stat-card-icon-pill { background: var(--cat-assets); box-shadow: 0 0 8px var(--cat-assets); }
+
+.stat-card-value {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  margin: 8px 0 6px;
+  color: var(--text);
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.stat-card-currency {
+  font-size: 0.55em;
+  color: var(--text-secondary);
+  margin-right: 1px;
+}
+
+.stat-card-unit {
+  font-size: 0.48em;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+.stat-card-footer {
+  display: flex;
+  align-items: center;
+}
+
+/* ─── Main Overview Split Grid ─────────────────────────────────────────────── */
+
+.overview-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 390px;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.overview-chart-col {
+  min-width: 0;
+}
+
+.overview-side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* ─── Capital Structure Donut Card (Reference-Inspired) ───────────────────── */
+
+.capital-donut-card {
+  border-radius: 22px;
+  padding: 22px 24px;
+  background: var(--glass-dense);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm), var(--inset-highlight);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.donut-card-header h2 {
+  font-size: 16px;
+  font-weight: 650;
+  color: var(--text);
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.donut-card-header p {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.donut-body {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+}
+
+.donut-chart-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 150px;
+  height: 150px;
+}
+
+.donut-svg {
+  display: block;
+  overflow: visible;
+}
+
+.donut-arc {
+  transition: stroke-width 180ms ease, opacity 180ms ease;
+  cursor: pointer;
+}
+
+.donut-arc:hover {
+  stroke-width: 18;
+  opacity: 0.92;
+}
+
+.donut-center-value {
+  fill: var(--text);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.donut-center-label {
+  fill: var(--text-muted);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.donut-legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.legend-marker-col {
+  padding-top: 4px;
+}
+
+.legend-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-text-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.legend-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.legend-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.legend-val small {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-left: 3px;
+}
+
+/* Fallback legacy dashboard-grid (kept for backwards compatibility) */
 .dashboard-grid {
   display: grid;
   grid-template-columns: 29% 71%;
@@ -910,7 +1178,7 @@
   gap: 16px;
 }
 
-/* ─── Financial Snapshot (Left Column) ─────────────────────────────────────── */
+/* ─── Financial Snapshot (Legacy panel fallback) ─────────────────────────── */
 
 .snapshot-panel {
   padding: 18px;
@@ -1273,6 +1541,47 @@
   fill: var(--cat-cashflow-soft);
   stroke: var(--cat-cashflow-border);
   stroke-width: 1px;
+}
+
+/* Floating Active Bar Badge (Reference-Inspired) */
+.floating-active-badge {
+  pointer-events: none;
+  animation: badge-pop 240ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+@keyframes badge-pop {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.floating-badge-bg {
+  fill: #1F1814;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+}
+
+[data-theme="light"] .floating-badge-bg {
+  fill: #FFFFFF;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 4px 10px rgba(184, 101, 24, 0.22));
+}
+
+.floating-badge-text {
+  fill: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+[data-theme="dark"] .bar-current {
+  filter: drop-shadow(0 0 14px rgba(255, 181, 104, 0.4));
+}
+
+[data-theme="dark"] .bar-prior {
+  fill: rgba(255, 255, 255, 0.1);
+  stroke: rgba(255, 255, 255, 0.18);
 }
 
 .chart-tooltip {
@@ -2052,8 +2361,13 @@
     display: flex;
   }
 
-  .dashboard-grid {
+  .dashboard-grid,
+  .overview-main-grid {
     grid-template-columns: 1fr;
+  }
+
+  .overview-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .snapshot-panel {
@@ -2070,6 +2384,15 @@
 }
 
 @media (max-width: 600px) {
+  .overview-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .donut-body {
+    flex-direction: column;
+    align-items: center;
+  }
+
   .page-heading-row {
     flex-direction: column;
     gap: 10px;
@@ -2465,36 +2788,58 @@
 }
 
 .ratio-card {
-  padding: 18px;
+  position: relative;
+  padding: 20px 22px 18px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   border-radius: var(--radius-card);
-  border-left-width: 4px;
-  border-left-style: solid;
-  border-left-color: var(--border-strong);
-  transition: transform 180ms var(--ease), box-shadow 180ms var(--ease);
+  background: var(--glass-panel);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm), var(--inset-highlight);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  transition: transform 180ms var(--ease), box-shadow 180ms var(--ease), border-color 180ms var(--ease);
+  overflow: hidden;
 }
 
+.ratio-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.ratio-card-profitability::before { background: var(--cat-profit); }
+.ratio-card-liquidity::before { background: var(--cat-cashflow); }
+.ratio-card-leverage::before { background: var(--cat-debt); }
+.ratio-card-growth::before { background: var(--cat-revenue); }
+
 .ratio-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: var(--shadow-md), var(--inset-highlight);
 }
 
-.ratio-card-profitability {
-  border-left-color: var(--cat-profit);
+[data-theme="dark"] .ratio-card-growth:hover {
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.6), 0 0 24px -4px rgba(255, 181, 104, 0.22), var(--inset-highlight);
+  border-color: rgba(255, 181, 104, 0.35);
 }
 
-.ratio-card-liquidity {
-  border-left-color: var(--cat-cashflow);
+[data-theme="dark"] .ratio-card-profitability:hover {
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.6), 0 0 24px -4px rgba(183, 148, 246, 0.22), var(--inset-highlight);
+  border-color: rgba(183, 148, 246, 0.35);
 }
 
-.ratio-card-leverage {
-  border-left-color: var(--cat-debt);
+[data-theme="dark"] .ratio-card-liquidity:hover {
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.6), 0 0 24px -4px rgba(56, 189, 248, 0.22), var(--inset-highlight);
+  border-color: rgba(56, 189, 248, 0.35);
 }
 
-.ratio-card-growth {
-  border-left-color: var(--cat-revenue);
+[data-theme="dark"] .ratio-card-leverage:hover {
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.6), 0 0 24px -4px rgba(251, 113, 133, 0.22), var(--inset-highlight);
+  border-color: rgba(251, 113, 133, 0.35);
 }
 
 .ratio-cat-badge {

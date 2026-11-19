@@ -251,20 +251,42 @@ export default function AnalysisPage({
                 onFocus={() => showTooltip(item, x, y)}
                 onMouseEnter={() => showTooltip(item, x, y)}
                 onMouseLeave={() => setTooltip(null)}
-                rx="10"
+                rx="14"
                 tabIndex={0}
                 width="84"
                 x={x - 42}
                 y={y}
               />
-              <text
-                className="bar-value tabular-nums"
-                textAnchor="middle"
-                x={x}
-                y={y - 8}
-              >
-                ${item.value.toFixed(1)}M
-              </text>
+              {item.isCurrent && (
+                <g className="floating-active-badge">
+                  <rect
+                    className="floating-badge-bg"
+                    height="22"
+                    rx="11"
+                    width="84"
+                    x={x - 42}
+                    y={y - 32}
+                  />
+                  <text
+                    className="floating-badge-text tabular-nums"
+                    textAnchor="middle"
+                    x={x}
+                    y={y - 17}
+                  >
+                    ${item.value.toFixed(1)}M
+                  </text>
+                </g>
+              )}
+              {!item.isCurrent && (
+                <text
+                  className="bar-value tabular-nums"
+                  textAnchor="middle"
+                  x={x}
+                  y={y - 8}
+                >
+                  ${item.value.toFixed(1)}M
+                </text>
+              )}
               <text className="year-text" textAnchor="middle" x={x} y={192}>
                 {item.year}
               </text>
@@ -366,20 +388,42 @@ export default function AnalysisPage({
             onFocus={() => showTooltip(item, x, y)}
             onMouseEnter={() => showTooltip(item, x, y)}
             onMouseLeave={() => setTooltip(null)}
-            rx="8"
+            rx="12"
             tabIndex={0}
             width="54"
             x={x - 27}
             y={y}
           />
-          <text
-            className="bar-value tabular-nums"
-            textAnchor="middle"
-            x={x}
-            y={y - 8}
-          >
-            ${item.value.toFixed(1)}M
-          </text>
+          {item.isCurrent && (
+            <g className="floating-active-badge">
+              <rect
+                className="floating-badge-bg"
+                height="22"
+                rx="11"
+                width="72"
+                x={x - 36}
+                y={y - 32}
+              />
+              <text
+                className="floating-badge-text tabular-nums"
+                textAnchor="middle"
+                x={x}
+                y={y - 17}
+              >
+                ${item.value.toFixed(1)}M
+              </text>
+            </g>
+          )}
+          {!item.isCurrent && (
+            <text
+              className="bar-value tabular-nums"
+              textAnchor="middle"
+              x={x}
+              y={y - 8}
+            >
+              ${item.value.toFixed(1)}M
+            </text>
+          )}
           <text className="year-text" textAnchor="middle" x={x} y={192}>
             {item.year}
           </text>

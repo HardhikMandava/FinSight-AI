@@ -678,29 +678,119 @@ function FinancialSnapshot({
   ]
 
   return (
-    <div className="snapshot-panel surface">
-      <div className="snapshot-heading">
-        <h2>Financial snapshot</h2>
-        <p>{period}</p>
-      </div>
+    <div className="overview-stats-grid">
       {tiles.map((tile, i) => (
         <div
-          className={`metric-tile ${tile.color} entrance entrance-${i + 1}`}
+          className={`overview-stat-card ${tile.color} entrance entrance-${i + 1}`}
           key={tile.label}
         >
-          <div className="tile-label">{tile.label}</div>
-          <div className="tile-value tabular-nums">
-            <span className="tile-currency">$</span>
-            <AnimatedNumber isReducedMotion={isReducedMotion} value={tile.value} />
-            <span className="tile-unit">M</span>
+          <div className="stat-card-top">
+            <span className="stat-card-label">{tile.label}</span>
+            <span className="stat-card-icon-pill" />
           </div>
-          <Comparison
-            change={tile.change}
-            neutral={tile.neutral}
-            priorPeriod={priorPeriod}
-          />
+          <div className="stat-card-value tabular-nums">
+            <span className="stat-card-currency">$</span>
+            <AnimatedNumber isReducedMotion={isReducedMotion} value={tile.value} />
+            <span className="stat-card-unit">M</span>
+          </div>
+          <div className="stat-card-footer">
+            <Comparison
+              change={tile.change}
+              neutral={tile.neutral}
+              priorPeriod={priorPeriod}
+            />
+          </div>
         </div>
       ))}
+    </div>
+  )
+}
+
+/* ─── Capital Structure Donut Card (Reference-Inspired) ───────────────────── */
+
+function CapitalStructureDonut({ period }: { period: Period }) {
+  const current = financialData[period]
+  const totalAssets = current.assets
+  const currentAssets = current.currentAssets
+  const fixedAssets = current.assets - current.currentAssets
+  const equity = current.equity
+  const debt = current.interestBearingDebt
+
+  const segments = [
+    { label: "Shareholders' equity", value: equity, pct: ((equity / totalAssets) * 100).toFixed(1), stroke: "var(--cat-revenue)" },
+    { label: "Fixed assets & PP&E", value: fixedAssets, pct: ((fixedAssets / totalAssets) * 100).toFixed(1), stroke: "var(--cat-assets)" },
+    { label: "Current assets", value: currentAssets, pct: ((currentAssets / totalAssets) * 100).toFixed(1), stroke: "var(--cat-cashflow)" },
+    { label: "Funded debt", value: debt, pct: ((debt / totalAssets) * 100).toFixed(1), stroke: "var(--cat-debt)" },
+  ]
+
+  const radius = 54
+  const circumference = 2 * Math.PI * radius
+
+  return (
+    <div className="capital-donut-card surface">
+      <div className="donut-card-header">
+        <h2>Balance sheet composition</h2>
+        <p>Asset & capital structure · {period}</p>
+      </div>
+      <div className="donut-body">
+        <div className="donut-chart-wrap">
+          <svg className="donut-svg" viewBox="0 0 160 160" width="150" height="150">
+            <circle
+              cx="80"
+              cy="80"
+              r={radius}
+              fill="none"
+              stroke="var(--border)"
+              strokeWidth="12"
+            />
+            {(() => {
+              let currentOffset = 0
+              return segments.map((seg) => {
+                const segPct = Math.min(1, seg.value / totalAssets)
+                const strokeDash = segPct * circumference
+                const dashArray = `${strokeDash} ${circumference - strokeDash}`
+                const dashOffset = -currentOffset
+                currentOffset += strokeDash
+                return (
+                  <circle
+                    key={seg.label}
+                    cx="80"
+                    cy="80"
+                    r={radius}
+                    fill="none"
+                    stroke={seg.stroke}
+                    strokeWidth="12"
+                    strokeDasharray={dashArray}
+                    strokeDashoffset={dashOffset}
+                    strokeLinecap="round"
+                    className="donut-arc"
+                    style={{ transform: "rotate(-90deg)", transformOrigin: "80px 80px" }}
+                  />
+                )
+              })
+            })()}
+            <text x="80" y="76" textAnchor="middle" className="donut-center-value tabular-nums">
+              ${totalAssets}M
+            </text>
+            <text x="80" y="94" textAnchor="middle" className="donut-center-label">
+              Total assets
+            </text>
+          </svg>
+        </div>
+        <div className="donut-legend">
+          {segments.map((seg) => (
+            <div className="donut-legend-item" key={seg.label}>
+              <div className="legend-marker-col">
+                <span className="legend-dot" style={{ background: seg.stroke }} />
+              </div>
+              <div className="legend-text-col">
+                <span className="legend-label">{seg.label}</span>
+                <span className="legend-val tabular-nums">${seg.value}M <small>({seg.pct}%)</small></span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
@@ -822,24 +912,46 @@ function PerformanceChart({
                 onFocus={() => showTooltip(item, x, y)}
                 onMouseEnter={() => showTooltip(item, x, y)}
                 onMouseLeave={() => setTooltip(null)}
-                rx="12"
+                rx="14"
                 tabIndex={0}
                 width="82"
                 x={x - 41}
                 y={y}
               />
-              <text
-                className="bar-value tabular-nums"
-                textAnchor="middle"
-                x={x}
-                y={y - 8}
-              >
-                $
-                {item.value.toLocaleString("en-US", {
-                  maximumFractionDigits: 2,
-                })}
-                M
-              </text>
+              {item.isCurrent && (
+                <g className="floating-active-badge">
+                  <rect
+                    className="floating-badge-bg"
+                    height="22"
+                    rx="11"
+                    width="84"
+                    x={x - 42}
+                    y={y - 32}
+                  />
+                  <text
+                    className="floating-badge-text tabular-nums"
+                    textAnchor="middle"
+                    x={x}
+                    y={y - 17}
+                  >
+                    ${item.value.toLocaleString("en-US", { maximumFractionDigits: 1 })}M
+                  </text>
+                </g>
+              )}
+              {!item.isCurrent && (
+                <text
+                  className="bar-value tabular-nums"
+                  textAnchor="middle"
+                  x={x}
+                  y={y - 8}
+                >
+                  $
+                  {item.value.toLocaleString("en-US", {
+                    maximumFractionDigits: 1,
+                  })}
+                  M
+                </text>
+              )}
               <text className="year-text" textAnchor="middle" x={x} y={180}>
                 {item.year}
               </text>
@@ -946,20 +1058,42 @@ function PerformanceChart({
             onFocus={() => showTooltip(item, x, y)}
             onMouseEnter={() => showTooltip(item, x, y)}
             onMouseLeave={() => setTooltip(null)}
-            rx="8"
+            rx="12"
             tabIndex={0}
             width="54"
             x={x - 27}
             y={y}
           />
-          <text
-            className="bar-value tabular-nums"
-            textAnchor="middle"
-            x={x}
-            y={y - 8}
-          >
-            ${item.value.toLocaleString("en-US", { maximumFractionDigits: 2 })}M
-          </text>
+          {item.isCurrent && (
+            <g className="floating-active-badge">
+              <rect
+                className="floating-badge-bg"
+                height="22"
+                rx="11"
+                width="72"
+                x={x - 36}
+                y={y - 32}
+              />
+              <text
+                className="floating-badge-text tabular-nums"
+                textAnchor="middle"
+                x={x}
+                y={y - 17}
+              >
+                ${item.value.toLocaleString("en-US", { maximumFractionDigits: 1 })}M
+              </text>
+            </g>
+          )}
+          {!item.isCurrent && (
+            <text
+              className="bar-value tabular-nums"
+              textAnchor="middle"
+              x={x}
+              y={y - 8}
+            >
+              ${item.value.toLocaleString("en-US", { maximumFractionDigits: 1 })}M
+            </text>
+          )}
           <text className="year-text" textAnchor="middle" x={x} y={180}>
             {item.year}
           </text>
@@ -2125,28 +2259,36 @@ export default function App() {
                 </Button>
               </nav>
 
-              <div className="dashboard-grid entrance entrance-2">
-                <aside className="snapshot-col">
-                  <FinancialSnapshot
-                    comparison={comparison}
-                    current={current}
-                    hasComparison={hasComparison}
-                    isReducedMotion={effectiveReducedMotion}
-                    period={period}
-                    priorPeriod={priorPeriod}
-                  />
-                </aside>
-                <div className="charts-col">
+              {/* Top Row: 4 Metric Cards Across */}
+              <div className="entrance entrance-2">
+                <FinancialSnapshot
+                  comparison={comparison}
+                  current={current}
+                  hasComparison={hasComparison}
+                  isReducedMotion={effectiveReducedMotion}
+                  period={period}
+                  priorPeriod={priorPeriod}
+                />
+              </div>
+
+              {/* Main Content: Performance Trajectory + Capital Structure Donut */}
+              <div className="overview-main-grid entrance entrance-2">
+                <div className="overview-chart-col">
                   <PerformanceChart
                     metric={metric}
                     onMetric={setMetric}
                     period={period}
                   />
-                  <div className="lower-row entrance entrance-3">
-                    <FinancialIndicators period={period} />
-                    <SampleDocuments onNavigate={navigate} />
-                  </div>
                 </div>
+                <div className="overview-side-col">
+                  <CapitalStructureDonut period={period} />
+                </div>
+              </div>
+
+              {/* Lower Row: Financial Indicators & Sample Documents */}
+              <div className="lower-row entrance entrance-3">
+                <FinancialIndicators period={period} />
+                <SampleDocuments onNavigate={navigate} />
               </div>
 
               {/* Expandable About this Dataset Section */}
