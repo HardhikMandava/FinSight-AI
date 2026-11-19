@@ -114,21 +114,13 @@ export default function LandingPage({
       </header>
 
       <main id="main-content">
-        {/* Hero Section */}
+        {/* Hero Section: Centered Monumental Direction */}
         <section className="landing-hero">
           <div className="hero-copy">
-            <span className="eyebrow">
-              <i /> Financial document intelligence, made legible
-            </span>
-            <h1>
-              Read the numbers.
-              <br />
-              <em>See the reasoning.</em>
-            </h1>
+            <h1>Read reported numbers. Verify the reasoning.</h1>
             <p>
-              FinSight AI connects reported statement rows, deterministic ratios,
-              transparent risk screening rules, and grounded explanations into one
-              traceable workspace.
+              Connect reported financial statements, deterministic ratios, and
+              transparent risk screening into one traceable workspace.
             </p>
             <div className="hero-actions">
               <button
@@ -138,20 +130,13 @@ export default function LandingPage({
               >
                 Explore demo workspace <ArrowIcon />
               </button>
-              <button
-                className="button hero-secondary"
-                onClick={scrollToWorkflow}
-                type="button"
-              >
-                See how it works
-              </button>
             </div>
             <p className="hero-honesty">
               Fictional sample data (FY2020–FY2024). No account required. Files remain local in memory.
             </p>
           </div>
 
-          {/* Right Column: Glassy Dimensional Workspace Preview */}
+          {/* Wide Centered Interactive Stage */}
           <div
             className="product-stage"
             aria-label="Preview of the FinSight workspace"
@@ -169,10 +154,10 @@ export default function LandingPage({
               <div className="preview-content">
                 <div className="preview-head">
                   <div>
-                    <small>OVERVIEW</small>
+                    <span className="preview-section-name">Overview</span>
                     <strong>Northstar Manufacturing</strong>
                   </div>
-                  <span>FY2024</span>
+                  <span className="preview-period-badge">FY2024</span>
                 </div>
                 <div className="preview-metrics">
                   {heroMetrics.map((metric) => (
@@ -180,32 +165,36 @@ export default function LandingPage({
                       className={`preview-metric ${metric.tone}`}
                       key={metric.label}
                     >
-                      <small>{metric.label}</small>
-                      <strong>{metric.value}</strong>
-                      <span>{metric.detail}</span>
+                      <span className="metric-label">{metric.label}</span>
+                      <strong className="metric-value tabular-nums">{metric.value}</strong>
+                      <span className="metric-change tabular-nums">{metric.detail}</span>
                     </article>
                   ))}
                 </div>
                 <div className="preview-lower">
                   <article className="preview-chart-card">
-                    <div>
+                    <div className="preview-card-header">
                       <strong>Revenue trajectory</strong>
                       <span>USD millions</span>
                     </div>
                     <MiniChart />
                   </article>
                   <article className="preview-risk-card">
-                    <small>RULE SCREENING</small>
-                    <strong>
-                      {riskSummary.triggered}
-                      <span> / 7</span>
-                    </strong>
-                    <p>indicators triggered</p>
-                    <div>
-                      <i />
+                    <div className="preview-card-header">
+                      <strong>Risk screening</strong>
+                      <span>7 indicators</span>
+                    </div>
+                    <div className="risk-metric-box">
+                      <strong className="risk-count tabular-nums">
+                        {riskSummary.triggered}
+                        <span> / 7</span>
+                      </strong>
+                      <p>Triggered flags</p>
+                    </div>
+                    <div className="risk-card-footer">
+                      <i className="status-dot" />
                       <span>
-                        Margin, cash flow, liquidity and debt changes remain
-                        visible.
+                        Margin, cash flow, liquidity, and debt changes monitored.
                       </span>
                     </div>
                   </article>
@@ -213,14 +202,14 @@ export default function LandingPage({
               </div>
             </div>
             <div className="floating-proof proof-source">
-              <span>01</span>
+              <span className="proof-tag">01</span>
               <div>
                 <strong>Reported figure</strong>
-                <small>Revenue · FY2024</small>
+                <small>Revenue $516M · FY2024</small>
               </div>
             </div>
             <div className="floating-proof proof-formula">
-              <span>fx</span>
+              <span className="proof-tag">fx</span>
               <div>
                 <strong>Deterministic ratio</strong>
                 <small>43.86 ÷ 516 = 8.5%</small>
@@ -239,11 +228,7 @@ export default function LandingPage({
         <section className="capabilities-section" id="capabilities">
           <article className="capability-editorial capability-analysis">
             <div className="capability-copy">
-              <span className="section-kicker">FINANCIAL ANALYSIS</span>
-              <h2>
-                Numbers with
-                <br />a point of view.
-              </h2>
+              <h2>Numbers with a point of view.</h2>
               <p>
                 Inspect five-year historical performance, compare fiscal periods,
                 and review deterministic formulas directly alongside reported statement items.
@@ -259,7 +244,7 @@ export default function LandingPage({
             <div className="ratio-composition surface">
               <div className="ratio-orbit">
                 <span>8.5%</span>
-                <small>NET MARGIN</small>
+                <small>Net margin</small>
               </div>
               <div className="ratio-detail">
                 <span>FY2023</span>
@@ -301,12 +286,7 @@ export default function LandingPage({
               </div>
             </div>
             <div className="capability-copy">
-              <span className="section-kicker">TRANSPARENT RISK RULES</span>
-              <h2>
-                Flags, not
-                <br />
-                black boxes.
-              </h2>
+              <h2>Flags, not black boxes.</h2>
               <p>
                 Every rule exposes its exact threshold, supporting figures, and evaluation status.
                 Untriggered flags indicate condition absence, not an audited clean bill of health.
@@ -316,21 +296,14 @@ export default function LandingPage({
 
           <article className="capability-editorial capability-evidence">
             <div className="capability-copy">
-              <span className="section-kicker">
-                GROUNDED ASSISTANCE
-              </span>
-              <h2>
-                Answers that show
-                <br />
-                their working.
-              </h2>
+              <h2>Answers that show their working.</h2>
               <p>
                 The demo assistant evaluates questions using structured Northstar data.
                 Full PDF citations and text groundings require server-side extraction.
               </p>
             </div>
             <blockquote className="assistant-preview surface">
-              <small>DEMO ASSISTANT</small>
+              <span className="assistant-source-label">Demo assistant</span>
               <p>
                 Revenue increased by <mark>7.5%</mark>, from $480M in FY2023 to
                 $516M in FY2024. Operating cash flow declined from $65M to $58M.
@@ -346,36 +319,31 @@ export default function LandingPage({
         {/* Traceability Lineage Section */}
         <section className="trace-section">
           <div>
-            <span className="section-kicker">TRACEABILITY BY DESIGN</span>
-            <h2>
-              Three layers.
-              <br />
-              One clear lineage.
-            </h2>
+            <h2>Three layers with one clear lineage.</h2>
           </div>
           <div className="trace-stack">
             <article className="surface">
-              <span>01</span>
+              <span className="trace-layer-label">Report</span>
               <div>
                 <h3>Reported statement figures</h3>
                 <p>
                   Line items extracted directly from source filings without alterations.
                 </p>
               </div>
-              <b>$516M</b>
+              <b className="tabular-nums">$516M</b>
             </article>
             <article className="surface">
-              <span>02</span>
+              <span className="trace-layer-label">Formula</span>
               <div>
                 <h3>Deterministic formulas</h3>
                 <p>
                   Mathematical ratios and percentage changes with visible definitions.
                 </p>
               </div>
-              <b>8.5%</b>
+              <b className="tabular-nums">8.5%</b>
             </article>
             <article className="surface">
-              <span>03</span>
+              <span className="trace-layer-label">Lineage</span>
               <div>
                 <h3>Evidence & citations</h3>
                 <p>
@@ -390,12 +358,11 @@ export default function LandingPage({
         {/* Prototype Scope Matrix */}
         <section className="scope-section" id="roadmap">
           <div className="scope-intro">
-            <span className="section-kicker">HONEST PROTOTYPE SCOPE</span>
             <h2>Built to make document intelligence tangible.</h2>
           </div>
           <div className="scope-columns">
             <article className="surface scope-card-available">
-              <span className="scope-badge badge-now">Available in this demo</span>
+              <h3 className="scope-col-header">Available in this demo</h3>
               <ul>
                 <li>Five-year Northstar Manufacturing dataset (FY2020–FY2024)</li>
                 <li>9 calculated financial ratios with missing-data handling</li>
@@ -405,7 +372,7 @@ export default function LandingPage({
               </ul>
             </article>
             <article className="surface scope-card-planned">
-              <span className="scope-badge badge-roadmap">Requires backend integration</span>
+              <h3 className="scope-col-header">Requires backend integration</h3>
               <ul>
                 <li>Server-side PDF OCR parsing and table extraction</li>
                 <li>Document-grounded language model reasoning</li>
@@ -418,9 +385,6 @@ export default function LandingPage({
 
         {/* Final CTA Section */}
         <section className="landing-final">
-          <span className="section-kicker">
-            EXPLORE THE PROTOTYPE
-          </span>
           <h2>See the full reasoning layer.</h2>
           <p>
             Inspect the five-year Northstar dataset across overview, analysis, risk screening,

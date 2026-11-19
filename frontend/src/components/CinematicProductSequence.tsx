@@ -114,7 +114,6 @@ export default function CinematicProductSequence({
         className="cinematic-static-section"
         id="product-story"
       >
-        <div className="section-kicker">INTERACTIVE WALKTHROUGH</div>
         <div className="cinematic-static-header">
           <h2>From source report to verified reasoning.</h2>
           <p>
@@ -126,7 +125,7 @@ export default function CinematicProductSequence({
         <div className="cinematic-static-grid">
           {/* Card 1 */}
           <article className="static-story-card surface">
-            <div className="story-step-badge">01 · THE REPORT</div>
+            <span className="static-step-name">The report</span>
             <h3>Start with the report</h3>
             <p>
               Source figures are read from financial statements without
@@ -135,22 +134,22 @@ export default function CinematicProductSequence({
             <div className="static-mini-report">
               <div className="report-row highlight">
                 <span>Revenue</span>
-                <strong>$516M</strong>
+                <strong className="tabular-nums">$516M</strong>
               </div>
               <div className="report-row highlight">
-                <span>Net Income</span>
-                <strong>$43.86M</strong>
+                <span>Net income</span>
+                <strong className="tabular-nums">$43.86M</strong>
               </div>
               <div className="report-row highlight">
-                <span>Operating Cash Flow</span>
-                <strong>$58M</strong>
+                <span>Operating cash flow</span>
+                <strong className="tabular-nums">$58M</strong>
               </div>
             </div>
           </article>
 
           {/* Card 2 */}
           <article className="static-story-card surface">
-            <div className="story-step-badge">02 · THE FIGURES</div>
+            <span className="static-step-name">Structured figures</span>
             <h3>Bring numbers into focus</h3>
             <p>
               Key statement lines separate into structured metric cards with YoY
@@ -159,25 +158,25 @@ export default function CinematicProductSequence({
             <div className="static-metrics-group">
               <div className="static-metric-pill pill-rev">
                 <span>Revenue</span>
-                <strong>$516M</strong>
-                <small>+7.5% YoY</small>
+                <strong className="tabular-nums">$516M</strong>
+                <small className="tabular-nums">+7.5% YoY</small>
               </div>
               <div className="static-metric-pill pill-inc">
-                <span>Net Income</span>
-                <strong>$43.86M</strong>
-                <small>−8.6% YoY</small>
+                <span>Net income</span>
+                <strong className="tabular-nums">$43.86M</strong>
+                <small className="tabular-nums">−8.6% YoY</small>
               </div>
               <div className="static-metric-pill pill-cf">
-                <span>Cash Flow</span>
-                <strong>$58M</strong>
-                <small>−10.8% YoY</small>
+                <span>Cash flow</span>
+                <strong className="tabular-nums">$58M</strong>
+                <small className="tabular-nums">−10.8% YoY</small>
               </div>
             </div>
           </article>
 
           {/* Card 3 */}
           <article className="static-story-card surface">
-            <div className="story-step-badge">03 · THE ANALYSIS</div>
+            <span className="static-step-name">Multi-year analysis</span>
             <h3>See the financial story</h3>
             <p>
               Five-year charts and deterministic ratio evaluations reveal trends
@@ -199,23 +198,22 @@ export default function CinematicProductSequence({
                 })}
               </div>
               <div className="static-ratio-chip">
-                <span>Net Margin</span>
-                <strong>8.5%</strong>
-                <small>43.86 ÷ 516</small>
+                <span>Net margin</span>
+                <strong className="tabular-nums">8.5%</strong>
+                <small className="tabular-nums">43.86 ÷ 516</small>
               </div>
             </div>
           </article>
 
           {/* Card 4 */}
           <article className="static-story-card surface card-final-preview">
-            <div className="story-step-badge">04 · THE PRODUCT</div>
+            <span className="static-step-name">Complete workspace</span>
             <h3>A complete reasoning workspace</h3>
             <p>
               Explore Northstar Manufacturing’s 5-year financials with full
               transparency.
             </p>
             <div className="static-cta-wrap">
-              <span className="sample-badge">Illustrative demo · Fictional data</span>
               <button
                 className="button hero-primary"
                 onClick={onExplore}
@@ -270,9 +268,6 @@ export default function CinematicProductSequence({
 
         {/* Narrative Stage Header */}
         <div className="cinematic-stage-header">
-          <span className="stage-scene-kicker">
-            STEP {activeHeading.step} OF 04
-          </span>
           <h2 className="stage-scene-title">{activeHeading.title}</h2>
           <p className="stage-scene-subtitle">{activeHeading.subtitle}</p>
         </div>
